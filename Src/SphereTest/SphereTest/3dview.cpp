@@ -10,6 +10,8 @@ c3DView::c3DView(const string &name)
 	: framework::cDockWindow(name)
 	, m_groundPlane1(Vector3(0, 1, 0), 0)
 	, m_groundPlane2(Vector3(0, -1, 0), 0)
+	, m_isShowWireframe(false)
+	, m_isShowGridLine(false)
 {
 }
 
@@ -20,8 +22,8 @@ c3DView::~c3DView()
 
 bool c3DView::Init(cRenderer &renderer)
 {
-	const Vector3 eyePos = Vector3(183.764954f, 11.2276716f, 205.151779f);
-	const Vector3 lookAt = Vector3(174.263977f, 0.f, 184.523102f);
+	const Vector3 eyePos = Vector3(0, 0, 0);
+	const Vector3 lookAt = Vector3(100, 0, 0);
 
 	const sRectf viewRect = GetWindowSizeAvailible();
 	m_camera.SetCamera(eyePos, lookAt, Vector3(0, 1, 0));
@@ -40,10 +42,21 @@ bool c3DView::Init(cRenderer &renderer)
 
 	m_gridLine.Create(renderer, 600, 600, 1.f, 1.f
 		, (eVertexType::POSITION | eVertexType::COLOR)
-		, cColor(0.6f, 0.6f, 0.6f, 1.f)
 		, cColor(0.4f, 0.4f, 0.4f, 1.f)
+		, cColor(0.6f, 0.6f, 0.6f, 1.f)
 	);
 	m_gridLine.m_transform.pos.y = 0.01f;
+
+	m_sphere.Create(renderer, 1000, 100, 100
+		, graphic::eVertexType::POSITION 
+		//| graphic::eVertexType::NORMAL
+		| graphic::eVertexType::TEXTURE0
+	);
+
+	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(
+		//renderer, "Big_ben_equirectangular.jpg");
+		//renderer, "J6tcu.png");
+		renderer, "test6.jpg");
 
 	return true;
 }
@@ -66,6 +79,17 @@ void c3DView::OnPreRender(const float deltaSeconds)
 
 	if (m_renderTarget.Begin(renderer))
 	{
+		CommonStates state(renderer.GetDevice());
+		if (m_isShowWireframe)
+			renderer.GetDevContext()->RSSetState(state.Wireframe());
+		else
+			//renderer.GetDevContext()->RSSetState(state.CullCounterClockwise());
+			renderer.GetDevContext()->RSSetState(state.CullNone());
+
+		if (m_isShowGridLine)
+			m_gridLine.Render(renderer);
+
+		m_sphere.Render(renderer);
 	}
 	m_renderTarget.End(renderer);
 }
@@ -91,6 +115,9 @@ void c3DView::OnRender(const float deltaSeconds)
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Checkbox("Wireframe", &m_isShowWireframe);
+		ImGui::SameLine();
+		ImGui::Checkbox("GridLine", &m_isShowGridLine);
 	}
 	ImGui::PopStyleColor();
 	ImGui::End();
@@ -163,9 +190,8 @@ void c3DView::OnMouseMove(const POINT mousePt)
 		dir.Normalize();
 		right.y = 0;
 		right.Normalize();
-
-		GetMainCamera().MoveRight(-delta.x * m_rotateLen * 0.001f);
-		GetMainCamera().MoveFrontHorizontal(delta.y * m_rotateLen * 0.001f);
+		//GetMainCamera().MoveRight(-delta.x * m_rotateLen * 0.001f);
+		//GetMainCamera().MoveFrontHorizontal(delta.y * m_rotateLen * 0.001f);
 	}
 	else if (m_mouseDown[1])
 	{
@@ -181,6 +207,27 @@ void c3DView::OnMouseMove(const POINT mousePt)
 		GetMainCamera().MoveRight(-delta.x * len * 0.001f);
 		GetMainCamera().MoveUp(delta.y * len * 0.001f);
 	}
+
+	//
+	float dotH = 0.f;
+	{
+		const Vector3 rdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
+		dotH = rdir.DotProduct(Vector3(1, 0, 0));
+		if (Vector3(1, 0, 0).CrossProduct(rdir).y < 0)
+			dotH = -dotH;
+	}
+	float dotV = 0.f;
+	{
+		const Vector3 rdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
+		dotV = rdir.DotProduct(ray.dir);
+		if (ray.dir.y < 0)
+			dotV = -dotV;
+	}
+
+	const float u = min(1.f, max(0.f, dotH / MATH_PI + 0.5f));
+	const float v = min(1.f, max(0.f, dotV / MATH_PI + 0.5f));
+
+
 }
 
 

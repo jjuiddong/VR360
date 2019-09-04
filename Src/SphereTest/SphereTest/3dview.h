@@ -30,10 +30,13 @@ protected:
 
 
 public:
+	graphic::cSphere m_sphere;
 	graphic::cGridLine m_gridLine;
 	graphic::cRenderTarget m_renderTarget;
 
 	Vector3 m_pickPos;
+	bool m_isShowWireframe;
+	bool m_isShowGridLine;
 
 	// MouseMove Variable
 	POINT m_viewPos;
