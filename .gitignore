@@ -328,3 +328,7 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+Package/errlog.txt
+Package/log.txt
+Package/imgui.ini
+Package/SphereTest.exe
