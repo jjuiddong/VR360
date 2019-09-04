@@ -332,3 +332,5 @@ Package/errlog.txt
 Package/log.txt
 Package/imgui.ini
 Package/SphereTest.exe
+Src/SphereTest/SphereTest/log.txt
+Src/SphereTest/SphereTest/errlog.txt
