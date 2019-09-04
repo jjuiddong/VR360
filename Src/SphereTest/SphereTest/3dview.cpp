@@ -58,6 +58,15 @@ bool c3DView::Init(cRenderer &renderer)
 		//renderer, "J6tcu.png");
 		renderer, "test6.jpg");
 
+	m_quad.Create(renderer, 0, 100, 100, 100, "test6.jpg");// "J6tcu.png");
+
+	m_shader.Create(renderer, "./media/shader11/uvcolor.fxo", "Unlit"
+		, graphic::eVertexType::POSITION_RHW | graphic::eVertexType::COLOR 
+		| graphic::eVertexType::TEXTURE0);
+
+	m_quad.m_shader = &m_shader;
+
+
 	return true;
 }
 
@@ -90,6 +99,10 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			m_gridLine.Render(renderer);
 
 		m_sphere.Render(renderer);
+		
+		renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
+		m_quad.Render(renderer);
+
 	}
 	m_renderTarget.End(renderer);
 }
@@ -224,10 +237,12 @@ void c3DView::OnMouseMove(const POINT mousePt)
 			dotV = -dotV;
 	}
 
-	const float u = min(1.f, max(0.f, dotH / MATH_PI + 0.5f));
-	const float v = min(1.f, max(0.f, dotV / MATH_PI + 0.5f));
+	//const float u = min(1.f, max(0.f, dotH / MATH_PI + 0.5f));
+	//const float v = min(1.f, max(0.f, dotV / MATH_PI + 0.5f));
 
-
+	const float u = acos(dotH) / MATH_PI;
+	const float v = ((acos(dotV) / MATH_PI) - 0.5f) * -1.f;
+	m_pickUV = Vector4(u, v, 0, 0);
 }
 
 

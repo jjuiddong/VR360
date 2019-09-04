@@ -32,9 +32,12 @@ protected:
 public:
 	graphic::cSphere m_sphere;
 	graphic::cGridLine m_gridLine;
+	graphic::cQuad2D m_quad;
+	graphic::cShader11 m_shader;
 	graphic::cRenderTarget m_renderTarget;
 
 	Vector3 m_pickPos;
+	Vector4 m_pickUV;
 	bool m_isShowWireframe;
 	bool m_isShowGridLine;
 
