@@ -241,7 +241,22 @@ void c3DView::OnMouseMove(const POINT mousePt)
 	//const float v = min(1.f, max(0.f, dotV / MATH_PI + 0.5f));
 
 	const float u = acos(dotH) / MATH_PI;
-	const float v = ((acos(dotV) / MATH_PI) - 0.5f) * -1.f;
+	float v = 0.f;
+	//if (dotV > 0)
+	{
+		//v = 0.5f - (acos(dotV) / MATH_PI);
+		float angle = acos(dotV);
+		if (abs(angle) > MATH_PI)
+			angle = (angle > 0)? angle - MATH_PI : angle + MATH_PI;
+		
+		v = abs((angle / MATH_PI) - 0.5f);
+	}
+	//else
+	//{
+
+	//}
+
+	//const float v = (float)abs((acos(dotV) / MATH_PI) - 0.5f);
 	m_pickUV = Vector4(u, v, 0, 0);
 }
 
