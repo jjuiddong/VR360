@@ -58,14 +58,64 @@ bool c3DView::Init(cRenderer &renderer)
 		//renderer, "J6tcu.png");
 		renderer, "test6.jpg");
 
-	m_quad.Create(renderer, 0, 100, 100, 100, "test6.jpg");// "J6tcu.png");
+	{
+		const float offset = 0.03f;
+		const Vector2 uvs[4] = {
+			Vector2(-offset,-offset)
+			, Vector2(offset,-offset)
+			, Vector2(-offset,offset)
+			, Vector2(offset,offset)
+		};
+		m_quad1.Create(renderer, 0, 100, 200, 200
+			, "test6.jpg"
+			//, "J6tcu.png"
+			, NULL
+			, uvs
+		);
+	}
 
-	m_shader.Create(renderer, "./media/shader11/uvcolor.fxo", "Unlit"
+	{
+		const float offset = 0.003f;
+		const Vector2 uvs[4] = {
+			Vector2(-offset,-offset)
+			, Vector2(offset,-offset)
+			, Vector2(-offset,offset)
+			, Vector2(offset,offset)
+		};
+		m_quad2.Create(renderer, 0, 310, 200, 200
+			, "test6.jpg"
+			//, "J6tcu.png"
+			, NULL
+			, uvs
+		);
+	}
+
+	{
+		const float offset = 0.0003f;
+		const Vector2 uvs[4] = {
+			Vector2(-offset,-offset)
+			, Vector2(offset,-offset)
+			, Vector2(-offset,offset)
+			, Vector2(offset,offset)
+		};
+		m_quad3.Create(renderer, 0, 520, 200, 200
+			, "test6.jpg"
+			//, "J6tcu.png"
+			, NULL
+			, uvs
+		);
+	}
+
+	m_shader.Create(renderer, 
+		"./media/shader11/uvcolor.fxo"
+		//"./media/shader11/tess-pos_rhw-uvcolor.fxo"
+		, "Unlit"
 		, graphic::eVertexType::POSITION_RHW | graphic::eVertexType::COLOR 
 		| graphic::eVertexType::TEXTURE0);
 
-	m_quad.m_shader = &m_shader;
-
+	m_quad1.m_shader = &m_shader;
+	m_quad2.m_shader = &m_shader;
+	m_quad3.m_shader = &m_shader;
 
 	return true;
 }
@@ -99,10 +149,17 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			m_gridLine.Render(renderer);
 
 		m_sphere.Render(renderer);
+
+		// render mouse point
+		const Ray ray = GetMainCamera().GetRay(m_mousePos.x, m_mousePos.y);
+		renderer.m_dbgLine.SetColor(cColor::RED);
+		renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
+		renderer.m_dbgLine.Render(renderer);
 		
 		renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
-		m_quad.Render(renderer);
-
+		m_quad1.Render(renderer);
+		m_quad2.Render(renderer);
+		m_quad3.Render(renderer);
 	}
 	m_renderTarget.End(renderer);
 }
@@ -114,6 +171,7 @@ void c3DView::OnRender(const float deltaSeconds)
 	m_viewPos = { (int)(pos.x), (int)(pos.y) };
 	const sRectf viewRect = GetWindowSizeAvailible();
 	ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(viewRect.Width(), viewRect.Height()));
+	//ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(100,100));
 
 	// HUD
 	// Render Menu Window
@@ -131,6 +189,7 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::Checkbox("Wireframe", &m_isShowWireframe);
 		ImGui::SameLine();
 		ImGui::Checkbox("GridLine", &m_isShowGridLine);
+		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
 	}
 	ImGui::PopStyleColor();
 	ImGui::End();
@@ -156,15 +215,15 @@ void c3DView::UpdateLookAt(const POINT &mousePt)
 	const float distance = m_groundPlane1.Collision(ray.dir);
 	if (distance < -0.2f)
 	{
-		GetMainCamera().m_lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
+		//GetMainCamera().m_lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
 	}
 	else
 	{ // horizontal viewing
-		const Vector3 lookAt = GetMainCamera().m_eyePos + GetMainCamera().GetDirection() * 20.f;
-		GetMainCamera().m_lookAt = lookAt;
+		//const Vector3 lookAt = GetMainCamera().m_eyePos + GetMainCamera().GetDirection() * 20.f;
+		//GetMainCamera().m_lookAt = lookAt;
 	}
 
-	GetMainCamera().UpdateViewMatrix();
+	//GetMainCamera().UpdateViewMatrix();
 }
 
 
@@ -182,7 +241,7 @@ void c3DView::OnWheelMove(const float delta, const POINT mousePt)
 	const int lv = 10;// m_quadTree.GetLevel(len);
 	const float zoomLen = min(len * 0.1f, (float)(2 << (16 - lv)));
 
-	GetMainCamera().Zoom(ray.dir, (delta < 0) ? -zoomLen : zoomLen);
+	//GetMainCamera().Zoom(ray.dir, (delta < 0) ? -zoomLen : zoomLen);
 }
 
 
@@ -208,11 +267,8 @@ void c3DView::OnMouseMove(const POINT mousePt)
 	}
 	else if (m_mouseDown[1])
 	{
-		//if (::GetAsyncKeyState(VK_LCONTROL))
-		{
-			m_camera.Yaw2(delta.x * 0.005f, Vector3(0, 1, 0));
-			m_camera.Pitch2(delta.y * 0.005f, Vector3(0, 1, 0));
-		}
+		m_camera.Yaw(delta.x * 0.005f);
+		m_camera.Pitch(delta.y * 0.005f);
 	}
 	else if (m_mouseDown[2])
 	{
@@ -223,41 +279,41 @@ void c3DView::OnMouseMove(const POINT mousePt)
 
 	//
 	float dotH = 0.f;
-	{
-		const Vector3 rdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
-		dotH = rdir.DotProduct(Vector3(1, 0, 0));
-		if (Vector3(1, 0, 0).CrossProduct(rdir).y < 0)
-			dotH = -dotH;
-	}
+	const Vector3 hdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
+	dotH = hdir.DotProduct(Vector3(1, 0, 0));
+
 	float dotV = 0.f;
+	const Vector3 vdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
+	dotV = vdir.DotProduct(ray.dir);
+
+	float u = 0.f;
 	{
-		const Vector3 rdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
-		dotV = rdir.DotProduct(ray.dir);
-		if (ray.dir.y < 0)
-			dotV = -dotV;
+		const float angle = acos(dotH) / MATH_PI;
+		if (Vector3(1, 0, 0).CrossProduct(hdir).y > 0)
+		{
+			u = 1.f - (angle * 0.5f);
+		}
+		else
+		{
+			u = (angle * 0.5f);
+		}
 	}
 
-	//const float u = min(1.f, max(0.f, dotH / MATH_PI + 0.5f));
-	//const float v = min(1.f, max(0.f, dotV / MATH_PI + 0.5f));
-
-	const float u = acos(dotH) / MATH_PI;
 	float v = 0.f;
-	//if (dotV > 0)
 	{
-		//v = 0.5f - (acos(dotV) / MATH_PI);
-		float angle = acos(dotV);
-		if (abs(angle) > MATH_PI)
-			angle = (angle > 0)? angle - MATH_PI : angle + MATH_PI;
-		
-		v = abs((angle / MATH_PI) - 0.5f);
+		float angle = acos(dotV) / MATH_PI;
+		if (ray.dir.y > 0)
+		{
+			v = 0.5f - angle;
+		}
+		else
+		{
+			v = abs(angle) + 0.5f;
+		}		
 	}
-	//else
-	//{
 
-	//}
-
-	//const float v = (float)abs((acos(dotV) / MATH_PI) - 0.5f);
 	m_pickUV = Vector4(u, v, 0, 0);
+	m_uv = Vector2(u, v);
 }
 
 
