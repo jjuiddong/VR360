@@ -53,10 +53,15 @@ bool c3DView::Init(cRenderer &renderer)
 		| graphic::eVertexType::TEXTURE0
 	);
 
+
+	const char* fileName = 
+		//"test6.jpg";
+		"workobj/1.bmp";
+
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(
 		//renderer, "Big_ben_equirectangular.jpg");
 		//renderer, "J6tcu.png");
-		renderer, "test6.jpg");
+		renderer, fileName);
 
 	{
 		const float offset = 0.03f;
@@ -67,7 +72,7 @@ bool c3DView::Init(cRenderer &renderer)
 			, Vector2(offset,offset)
 		};
 		m_quad1.Create(renderer, 0, 100, 200, 200
-			, "test6.jpg"
+			, fileName
 			//, "J6tcu.png"
 			, NULL
 			, uvs
@@ -83,7 +88,7 @@ bool c3DView::Init(cRenderer &renderer)
 			, Vector2(offset,offset)
 		};
 		m_quad2.Create(renderer, 0, 310, 200, 200
-			, "test6.jpg"
+			, fileName
 			//, "J6tcu.png"
 			, NULL
 			, uvs
@@ -99,7 +104,7 @@ bool c3DView::Init(cRenderer &renderer)
 			, Vector2(offset,offset)
 		};
 		m_quad3.Create(renderer, 0, 520, 200, 200
-			, "test6.jpg"
+			, fileName
 			//, "J6tcu.png"
 			, NULL
 			, uvs
@@ -116,6 +121,11 @@ bool c3DView::Init(cRenderer &renderer)
 	m_quad1.m_shader = &m_shader;
 	m_quad2.m_shader = &m_shader;
 	m_quad3.m_shader = &m_shader;
+
+	// obj file format http://paulbourke.net/dataformats/obj/
+	//Model model;
+	//model.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
+	sRawMeshGroup2 *rawMeshes = cResourceManager::Get()->LoadRawMesh("./media/workobj/test_1.obj");
 
 	return true;
 }
