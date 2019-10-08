@@ -226,7 +226,7 @@ void c3DView::OnRender(const float deltaSeconds)
 
 	// HUD
 	// Render Menu Window
-	const int MENU_WIDTH = 450;
+	const int MENU_WIDTH = 550;
 	const float windowAlpha = 0.0f;
 	bool isOpen = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
@@ -250,6 +250,20 @@ void c3DView::OnRender(const float deltaSeconds)
 	}
 	ImGui::PopStyleColor();
 	ImGui::End();
+
+	ImGuiWindowFlags flags2 = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+	if (ImGui::Begin("Memo", NULL))
+	{
+		ImVec2 parentWndSize = ImGui::GetWindowSize();
+		const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
+
+		static Str512 text;
+		ImGui::PushID("memo");
+		ImGui::InputTextMultiline("", text.m_str, text.SIZE, wndSize);
+		ImGui::PopID();
+	}
+	ImGui::End();
+
 }
 
 
@@ -406,9 +420,7 @@ void c3DView::OnMouseMove(const POINT mousePt)
 
 	m_pickUV = Vector4(u, v, 0, 0);
 	m_uv = Vector2(u, v);
-
-
-	m_pickPos = PickPointCloud(mousePt);
+	//m_pickPos = PickPointCloud(mousePt);
 }
 
 
@@ -427,6 +439,8 @@ void c3DView::OnMouseDown(const sf::Mouse::Button &button, const POINT mousePt)
 		const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 		m_rotateLen = (p1 - ray.orig).Length();// min(500.f, (p1 - ray.orig).Length());
+
+		m_pickPos = PickPointCloud(mousePt);
 	}
 	break;
 

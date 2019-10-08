@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="viewer.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="view\3dview.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="view\infoview.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="global.cpp" />
+    <ClCompile Include="pointcloud\pcdatabase.cpp">
+      <Filter>pointcloud</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="view\3dview.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="view\infoview.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="global.h" />
+    <ClInclude Include="pointcloud\pcdatabase.h">
+      <Filter>pointcloud</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="view">
+      <UniqueIdentifier>{2ba15e2a-461e-437e-a342-9c3294085117}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pointcloud">
+      <UniqueIdentifier>{f142de3b-4f14-42e2-8fe1-68a5cd9a41fa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
