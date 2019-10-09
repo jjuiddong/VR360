@@ -1,0 +1,14 @@
+{
+    "point cloud": [
+        {
+            "name": "name 1",
+            "pos": "1.000000 2.000000 3.000000",
+            "description": "memo 1"
+        },
+        {
+            "name": "name 2",
+            "pos": "1.000000 2.000000 3.000000",
+            "description": "memo 2"
+        }
+    ]
+}

@@ -1,0 +1,48 @@
+{
+    "cameras": [
+        {
+            "name": "camera1",
+            "point cloud 3d filename": ".\/media\/workobj\/test_1.obj",
+            "point cloud texture filename": ".\/media\/workobj\/1.bmp",
+            "pos": "1.000000 2.000000 3.000000",
+            "point cloud": [
+                {
+                    "name": "Memo-10016",
+                    "pos": "4.441417 1.182047 0.056513",
+                    "description": "wall\nnext line\ncamera1\n"
+                },
+                {
+                    "name": "Memo-10019",
+                    "pos": "-0.068142 1.376010 -1.963409",
+                    "description": "image problem\ncamera1\ntest\n"
+                }
+            ]
+        },
+        {
+            "name": "camera2",
+            "point cloud 3d filename": ".\/media\/workobj\/test_2.obj",
+            "point cloud texture filename": ".\/media\/workobj\/2.bmp",
+            "pos": "1.000000 2.000000 3.000000",
+            "point cloud": [
+                {
+                    "name": "Memo-10026",
+                    "pos": "-7.817807 -1.320513 -0.797452",
+                    "description": "door problem\ncamera2\n"
+                }
+            ]
+        },
+        {
+            "name": "camera3",
+            "point cloud 3d filename": ".\/media\/workobj\/test_3.obj",
+            "point cloud texture filename": ".\/media\/workobj\/3.bmp",
+            "pos": "1.000000 2.000000 3.000000",
+            "point cloud": [
+                {
+                    "name": "Memo-10019",
+                    "pos": "-7.632938 -0.827695 -1.871433",
+                    "description": "have problem camera3\nnext door\n"
+                }
+            ]
+        }
+    ]
+}

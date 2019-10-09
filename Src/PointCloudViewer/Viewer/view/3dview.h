@@ -23,6 +23,7 @@ public:
 
 protected:
 	Vector3 PickPointCloud(const POINT mousePt);
+	bool JumpCamera(const string &cameraName);
 
 	void UpdateLookAt(const POINT &mousePt);
 	void OnWheelMove(const float delta, const POINT mousePt);
@@ -38,6 +39,7 @@ public:
 	graphic::cQuad2D m_quad1;
 	graphic::cQuad2D m_quad2;
 	graphic::cQuad2D m_quad3;
+	graphic::cQuad2D m_miniMap;
 	graphic::cShader11 m_shader;
 	graphic::cShader11 m_pointShader;
 	graphic::cRenderTarget m_renderTarget;
@@ -50,10 +52,12 @@ public:
 	bool m_isShowGridLine;
 	bool m_isShowPointCloud1; // point cloud
 	bool m_isShowPointCloud2; // tessellation
+	bool m_isShowPopupMenu;
 
 	// MouseMove Variable
 	POINT m_viewPos;
 	POINT m_mousePos; // window 2d mouse pos
+	POINT m_clickPos; // window 2d mouse pos
 	Vector3 m_mousePickPos; // mouse cursor pos in ground picking
 	bool m_mouseDown[3]; // Left, Right, Middle
 	float m_rotateLen;

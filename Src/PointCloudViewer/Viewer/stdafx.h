@@ -10,5 +10,6 @@
 using common::StrId;
 using common::Vector3;
 
+#include "pointcloud/pcdatabase.h"
 #include "global.h"
 extern cGlobal *g_global;

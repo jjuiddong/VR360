@@ -11,10 +11,11 @@ c3DView::c3DView(const string &name)
 	, m_groundPlane1(Vector3(0, 1, 0), 0)
 	, m_groundPlane2(Vector3(0, -1, 0), 0)
 	, m_isShowWireframe(false)
-	, m_isShowTexture(true)
+	, m_isShowTexture(false)
 	, m_isShowGridLine(false)
 	, m_isShowPointCloud1(true)
-	, m_isShowPointCloud2(false)
+	, m_isShowPointCloud2(true)
+	, m_isShowPopupMenu(false)
 {
 }
 
@@ -60,59 +61,12 @@ bool c3DView::Init(cRenderer &renderer)
 	const char* fileName = 
 		//"test6.jpg";
 		"workobj/1.bmp";
+		//"Big_ben_equirectangular.jpg";
+		//"J6tcu.png";
 
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(
-		//renderer, "Big_ben_equirectangular.jpg");
-		//renderer, "J6tcu.png");
 		renderer, fileName);
-
-	{
-		const float offset = 0.03f;
-		const Vector2 uvs[4] = {
-			Vector2(-offset,-offset)
-			, Vector2(offset,-offset)
-			, Vector2(-offset,offset)
-			, Vector2(offset,offset)
-		};
-		m_quad1.Create(renderer, 0, 100, 200, 200
-			, fileName
-			//, "J6tcu.png"
-			, NULL
-			, uvs
-		);
-	}
-
-	{
-		const float offset = 0.003f;
-		const Vector2 uvs[4] = {
-			Vector2(-offset,-offset)
-			, Vector2(offset,-offset)
-			, Vector2(-offset,offset)
-			, Vector2(offset,offset)
-		};
-		m_quad2.Create(renderer, 0, 310, 200, 200
-			, fileName
-			//, "J6tcu.png"
-			, NULL
-			, uvs
-		);
-	}
-
-	{
-		const float offset = 0.0003f;
-		const Vector2 uvs[4] = {
-			Vector2(-offset,-offset)
-			, Vector2(offset,-offset)
-			, Vector2(-offset,offset)
-			, Vector2(offset,offset)
-		};
-		m_quad3.Create(renderer, 0, 520, 200, 200
-			, fileName
-			//, "J6tcu.png"
-			, NULL
-			, uvs
-		);
-	}
+	m_miniMap.Create(renderer, 0, 50, 200, 200, "minimap.jpg");
 
 	m_shader.Create(renderer, 
 		"./media/shader11/uvcolor.fxo"
@@ -207,10 +161,11 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
 		renderer.m_dbgLine.Render(renderer);
 		
-		renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
-		m_quad1.Render(renderer);
-		m_quad2.Render(renderer);
-		m_quad3.Render(renderer);
+		//renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
+		//m_quad1.Render(renderer);
+		//m_quad2.Render(renderer);
+		//m_quad3.Render(renderer);
+		//m_miniMap.Render(renderer);
 	}
 	m_renderTarget.End(renderer);
 }
@@ -233,7 +188,7 @@ void c3DView::OnRender(const float deltaSeconds)
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowBgAlpha(windowAlpha);
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 100));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 500));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -247,22 +202,84 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::SameLine();
 		ImGui::Checkbox("PointCloud2", &m_isShowPointCloud2);
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
+
+		if (m_miniMap.m_texture)
+		{
+			auto *srv = m_miniMap.m_texture->m_texSRV;
+			ImGui::Image(srv, ImVec2(200,200));
+		}
+
+		// minimap jump button
+		{
+			auto &renderer = GetRenderer();
+
+			ImGui::SetWindowPos(ImVec2(30, -105));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
+			if (ImGui::Button("Camera1"))
+				JumpCamera("camera1");
+
+			ImGui::SetWindowPos(ImVec2(115, -130));
+			if (ImGui::Button("Camera2"))
+				JumpCamera("camera2");
+
+			ImGui::SetWindowPos(ImVec2(115, -80));
+			if (ImGui::Button("Camera3"))
+				JumpCamera("camera3");
+
+			ImGui::PopStyleColor(3);
+		}
 	}
 	ImGui::PopStyleColor();
 	ImGui::End();
 
-	ImGuiWindowFlags flags2 = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-	if (ImGui::Begin("Memo", NULL))
+	if (m_isShowPopupMenu)
 	{
-		ImVec2 parentWndSize = ImGui::GetWindowSize();
-		const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
-
-		static Str512 text;
-		ImGui::PushID("memo");
-		ImGui::InputTextMultiline("", text.m_str, text.SIZE, wndSize);
-		ImGui::PopID();
+		ImGui::OpenPopup("PopupMenu");
+		m_isShowPopupMenu = false;
 	}
-	ImGui::End();
+
+	if (ImGui::BeginPopup("PopupMenu"))
+	{
+		if (ImGui::MenuItem("Memo"))
+		{
+			if (!m_pickPos.IsEmpty())
+			{
+				cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
+					g_global->m_currentCameraName);
+				if (pc)
+					pc->pos = m_pickPos;
+			}
+		}
+		ImGui::EndPopup();
+	}
+
+	// Render Point Cloud Information Window
+	cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
+	if (cam)
+	{
+		const Ray ray = m_camera.GetRay();
+		const Plane plane(ray.dir, ray.orig);
+
+		for (auto &pc : cam->pcds)
+		{
+			if (plane.Distance(pc->pos) < 0.f)
+				continue;
+			const Vector2 screenPos = m_camera.GetScreenPos(pc->pos);
+			const ImVec2 wndPos(screenPos.x, screenPos.y);
+			ImGui::SetNextWindowPos(wndPos);
+			if (ImGui::Begin(pc->name.c_str(), NULL))
+			{
+				ImVec2 parentWndSize = ImGui::GetWindowSize();
+				const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
+				ImGui::PushID(pc);
+				ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE, wndSize);
+				ImGui::PopID();
+			}
+			ImGui::End();
+		}
+	}
 
 }
 
@@ -283,7 +300,7 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 	const Plane plane(ray.dir, ray.orig);
 	
 	sRawMeshGroup2 *rawMeshes = cResourceManager::Get()->LoadRawMesh(
-		"./media/workobj/test_1.obj");
+		m_pointCloud.m_fileName.c_str());
 	RETV(!rawMeshes, Vector3::Zeroes);
 
 	Transform tfm;
@@ -309,6 +326,24 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 		}
 	}
 	return nearPos;
+}
+
+
+bool c3DView::JumpCamera(const string &cameraName)
+{
+	g_global->m_currentCameraName = cameraName;
+
+	cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(cameraName);
+	if (!cam)
+		return false;
+
+	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(GetRenderer()
+		, cam->pcTextureFileName);
+
+	m_pointCloud.Clear();
+	m_pointCloud.Create(GetRenderer(), common::GenerateId(), cam->pc3dFileName);
+
+	return true;
 }
 
 
@@ -420,7 +455,6 @@ void c3DView::OnMouseMove(const POINT mousePt)
 
 	m_pickUV = Vector4(u, v, 0, 0);
 	m_uv = Vector2(u, v);
-	//m_pickPos = PickPointCloud(mousePt);
 }
 
 
@@ -428,6 +462,7 @@ void c3DView::OnMouseMove(const POINT mousePt)
 void c3DView::OnMouseDown(const sf::Mouse::Button &button, const POINT mousePt)
 {
 	m_mousePos = mousePt;
+	m_clickPos = mousePt;
 	UpdateLookAt(mousePt);
 	SetCapture();
 
@@ -447,7 +482,7 @@ void c3DView::OnMouseDown(const sf::Mouse::Button &button, const POINT mousePt)
 	case sf::Mouse::Right:
 	{
 		m_mouseDown[1] = true;
-
+		
 		//const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
 		//Vector3 target = m_groundPlane1.Pick(ray.orig, ray.dir);
 		//const float len = (GetMainCamera().GetEyePos() - target).Length();
@@ -473,8 +508,21 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 		m_mouseDown[0] = false;
 		break;
 	case sf::Mouse::Right:
+	{
 		m_mouseDown[1] = false;
-		break;
+
+		// check popup menu
+		const Vector2 dist((float)(m_clickPos.x - mousePt.x)
+			, (float)(m_clickPos.y - mousePt.y));
+		if (dist.Length() < 20)
+		{
+			// 마우스를 거의 움직이지 않은 상태에서
+			// 마우스 오른쪽 버튼을 눌렀다 떼야 팝업메뉴가 출력된다.
+			m_isShowPopupMenu = true;
+		}
+	}
+	break;
+
 	case sf::Mouse::Middle:
 		m_mouseDown[2] = false;
 		break;
