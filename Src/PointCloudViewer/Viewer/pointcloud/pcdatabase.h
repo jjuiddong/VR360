@@ -22,7 +22,9 @@ public:
 	{
 		int id; // unique id, (auto setting)
 		string name;
-		Vector3 pos;
+		Vector3 pos; // point cloud position
+		Vector3 wndPos; // information window poisition (ui)
+		Vector3 wndSize; // information window size (ui) (z not use)
 		Str256 desc; // description
 	};
 

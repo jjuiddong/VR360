@@ -87,6 +87,15 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 
 						const string posStr = vt.second.get<string>("pos");
 						pc.pos = ParseVector3(posStr);
+
+						const string wndPosStr = vt.second.get<string>("wndpos", "");
+						pc.wndPos = ParseVector3(wndPosStr);
+						if (pc.wndPos.IsEmpty())
+							pc.wndPos = pc.pos;
+
+						const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
+						pc.wndSize = ParseVector3(wndSizeStr);
+
 						pc.desc = vt.second.get<string>("description");
 
 						AddData(name, pc);
@@ -135,6 +144,15 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 				Str128 text;
 				text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
 				z.put("pos", text.c_str());
+
+				if (pc->wndPos.IsEmpty())
+					pc->wndPos = pc->pos;
+				text.Format("%f %f %f", pc->wndPos.x, pc->wndPos.y, pc->wndPos.z);
+				z.put("wndpos", text.c_str());
+
+				text.Format("%f %f %f", pc->wndSize.x, pc->wndSize.y, pc->wndSize.z);
+				z.put("wndsize", text.c_str());
+
 				z.put("description", pc->desc.c_str());
 
 				pcs.push_back(std::make_pair("", z));

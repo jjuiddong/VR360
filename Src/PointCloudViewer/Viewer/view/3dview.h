@@ -45,6 +45,7 @@ public:
 	graphic::cRenderTarget m_renderTarget;
 
 	Vector3 m_pickPos;
+	Vector3 m_pointCloudPos;
 	Vector4 m_pickUV;
 	Vector2 m_uv;
 	bool m_isShowWireframe;
@@ -53,6 +54,8 @@ public:
 	bool m_isShowPointCloud1; // point cloud
 	bool m_isShowPointCloud2; // tessellation
 	bool m_isShowPopupMenu;
+	
+	bool m_isUpdatePcWindowPos; // point information window position update when load file
 
 	// MouseMove Variable
 	POINT m_viewPos;

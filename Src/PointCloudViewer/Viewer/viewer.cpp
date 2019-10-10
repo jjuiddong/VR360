@@ -68,6 +68,7 @@ bool cViewer::OnInit()
 	m_gui.SetContext();
 
 	g_global = new cGlobal();
+	g_global->Init();
 
 	c3DView *view = new c3DView("3D Map");
 	view->Create(eDockState::DOCKWINDOW, eDockSlot::TAB, this, NULL);
@@ -82,7 +83,6 @@ bool cViewer::OnInit()
 
 	g_global->m_3dView = view;
 	g_global->m_infoView = infoView;
-	g_global->Init();
 
 	m_gui.SetContext();
 	m_gui.SetStyleColorsDark();

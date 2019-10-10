@@ -16,6 +16,7 @@ c3DView::c3DView(const string &name)
 	, m_isShowPointCloud1(true)
 	, m_isShowPointCloud2(true)
 	, m_isShowPopupMenu(false)
+	, m_isUpdatePcWindowPos(false)
 {
 }
 
@@ -88,7 +89,8 @@ bool c3DView::Init(cRenderer &renderer)
 		| graphic::eVertexType::TEXTURE0
 	);
 
-	m_pointCloud.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
+	//m_pointCloud.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
+	JumpCamera("camera1");
 
 	return true;
 }
@@ -160,6 +162,27 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		renderer.m_dbgLine.SetColor(cColor::RED);
 		renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
 		renderer.m_dbgLine.Render(renderer);
+
+
+		// Render Line Point to Information Window
+		cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
+		if (cam)
+		{
+			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
+
+			const Ray ray = GetMainCamera().GetRay();
+			const Plane plane(ray.dir, ray.orig);
+			for (auto &pc : cam->pcds)
+			{
+				if (plane.Distance(pc->pos) < 0.f)
+					continue;
+
+				renderer.m_dbgLine.SetLine(pc->pos, pc->wndPos, 0.001f);
+				renderer.m_dbgLine.Render(renderer);
+			}
+
+			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
+		}
 		
 		//renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
 		//m_quad1.Render(renderer);
@@ -181,14 +204,14 @@ void c3DView::OnRender(const float deltaSeconds)
 
 	// HUD
 	// Render Menu Window
-	const int MENU_WIDTH = 550;
+	const int MENU_WIDTH = 320;
 	const float windowAlpha = 0.0f;
 	bool isOpen = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowBgAlpha(windowAlpha);
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 500));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 400));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -197,7 +220,7 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::Checkbox("Wireframe", &m_isShowWireframe);
 		ImGui::SameLine();
 		ImGui::Checkbox("GridLine", &m_isShowGridLine);
-		ImGui::SameLine();
+		//ImGui::SameLine();
 		ImGui::Checkbox("PointCloud1", &m_isShowPointCloud1);
 		ImGui::SameLine();
 		ImGui::Checkbox("PointCloud2", &m_isShowPointCloud2);
@@ -249,7 +272,10 @@ void c3DView::OnRender(const float deltaSeconds)
 				cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
 					g_global->m_currentCameraName);
 				if (pc)
-					pc->pos = m_pickPos;
+				{
+					pc->pos = m_pointCloudPos;
+					pc->wndPos = m_pointCloudPos;
+				}
 			}
 		}
 		ImGui::EndPopup();
@@ -261,26 +287,97 @@ void c3DView::OnRender(const float deltaSeconds)
 	{
 		const Ray ray = m_camera.GetRay();
 		const Plane plane(ray.dir, ray.orig);
+		bool isUpdateWindowPos = false;
 
 		for (auto &pc : cam->pcds)
 		{
 			if (plane.Distance(pc->pos) < 0.f)
 				continue;
-			const Vector2 screenPos = m_camera.GetScreenPos(pc->pos);
-			const ImVec2 wndPos(screenPos.x, screenPos.y);
-			ImGui::SetNextWindowPos(wndPos);
+
+			if (m_isUpdatePcWindowPos || m_mouseDown[1])
+			{
+				const Vector2 screenPos = m_camera.GetScreenPos(pc->wndPos);
+				const ImVec2 wndPos(screenPos.x, screenPos.y);
+				ImGui::SetNextWindowPos(wndPos);
+				ImGui::SetNextWindowSize(ImVec2(pc->wndSize.x, pc->wndSize.y));
+			}
+
+			ImGui::PushID(pc);
 			if (ImGui::Begin(pc->name.c_str(), NULL))
 			{
-				ImVec2 parentWndSize = ImGui::GetWindowSize();
+				bool isStoreWndPos = false;
+
+				// 메모 내용의 가장 윗줄을 타이틀 이름으로 설정한다.
+				// 편집 도중에 윈도우 타이틀 이름을 바꾸면 포커스를 잃기 때문에
+				// 포커스가 바뀔 때 업데이트 한다.
+				static StrId focusWndName;
+				StrId changeTitleWnd;
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+				{
+					if (focusWndName != pc->name)
+					{
+						changeTitleWnd = focusWndName;
+						focusWndName = pc->name;
+					}
+				}
+				else
+				{
+					if (focusWndName == pc->name)
+					{
+						changeTitleWnd = focusWndName;
+						focusWndName.clear();
+					}
+				}
+
+				if (!changeTitleWnd.empty())
+				{
+					for (auto &p : cam->pcds)
+					{
+						if (changeTitleWnd == p->name)
+						{
+							vector<string> toks;
+							common::tokenizer(p->desc.c_str(), "\n", "", toks);
+							if (!toks.empty() && (p->name != toks[0]))
+							{
+								p->name = toks[0];
+								isUpdateWindowPos = true;
+								isStoreWndPos = true;
+								break;
+							}
+						}
+					}
+				}
+				//~ change window title name
+
+				const ImVec2 parentWndSize = ImGui::GetWindowSize();
 				const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
-				ImGui::PushID(pc);
+				ImGui::PushID(pc+1);
 				ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE, wndSize);
 				ImGui::PopID();
+
+				// 창이 마우스로 선택되면, 위치정보를 업데이트 한다.
+				// 창은 사용자가 임의로 위치를 이동할 수 있다.
+				if (isStoreWndPos
+					|| (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered()))
+				{
+					ImVec2 wndPos = ImGui::GetWindowPos();
+					// 2d 좌표를 3d로 좌표로 변환해서 저장한다.
+					const Ray r = m_camera.GetRay((int)wndPos.x, (int)wndPos.y);
+					const float len = r.orig.Distance(pc->pos);
+					Vector3 pos = r.orig + r.dir * len * 0.9f;
+					pc->wndPos = pos;
+				}
+				else
+				{
+					const ImVec2 wndSize = ImGui::GetWindowSize();
+					pc->wndSize = Vector3(wndSize.x, wndSize.y, 0);
+				}
 			}
 			ImGui::End();
+			ImGui::PopID();
 		}
-	}
-
+		m_isUpdatePcWindowPos = isUpdateWindowPos;
+	}//~cam
 }
 
 
@@ -342,6 +439,8 @@ bool c3DView::JumpCamera(const string &cameraName)
 
 	m_pointCloud.Clear();
 	m_pointCloud.Create(GetRenderer(), common::GenerateId(), cam->pc3dFileName);
+
+	m_isUpdatePcWindowPos = true; // use OnRender() function
 
 	return true;
 }
@@ -514,11 +613,12 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 		// check popup menu
 		const Vector2 dist((float)(m_clickPos.x - mousePt.x)
 			, (float)(m_clickPos.y - mousePt.y));
-		if (dist.Length() < 20)
+		if (dist.Length() < 5)
 		{
 			// 마우스를 거의 움직이지 않은 상태에서
 			// 마우스 오른쪽 버튼을 눌렀다 떼야 팝업메뉴가 출력된다.
 			m_isShowPopupMenu = true;
+			m_pointCloudPos = m_pickPos;
 		}
 	}
 	break;
@@ -599,6 +699,8 @@ void c3DView::OnEventProc(const sf::Event &evt)
 
 void c3DView::OnResetDevice()
 {
+	m_isUpdatePcWindowPos = true; // use OnRender() function
+
 	cRenderer &renderer = GetRenderer();
 
 	// update viewport

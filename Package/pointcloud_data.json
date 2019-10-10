@@ -7,14 +7,25 @@
             "pos": "1.000000 2.000000 3.000000",
             "point cloud": [
                 {
-                    "name": "Memo-10016",
-                    "pos": "4.441417 1.182047 0.056513",
-                    "description": "wall\nnext line\ncamera1\n"
+                    "name": "wall problem61233jjj",
+                    "pos": "4.457887 1.880051 -0.117313",
+                    "wndpos": "4.119825 1.664517 -0.353840",
+                    "wndsize": "266.000000 157.000000 0.000000",
+                    "description": "wall problem61233jjj\ncamera1sdfsdfkkdfj\nok\nsdfsdf"
                 },
                 {
-                    "name": "Memo-10019",
-                    "pos": "-0.068142 1.376010 -1.963409",
-                    "description": "image problem\ncamera1\ntest\n"
+                    "name": "P name problem test",
+                    "pos": "0.239481 1.271520 -1.947453",
+                    "wndpos": "0.913249 1.336212 -1.613058",
+                    "wndsize": "334.000000 149.000000 0.000000",
+                    "description": "P name problem test\ncamera1\nddddd\n"
+                },
+                {
+                    "name": "testt2 p233",
+                    "pos": "4.459774 0.794399 -0.822983",
+                    "wndpos": "4.081245 0.604666 -1.003914",
+                    "wndsize": "299.000000 180.000000 0.000000",
+                    "description": "testt2 p233\ndddss\nsdsdffkklk\ndsfsdfddff\nsddf\n"
                 }
             ]
         },
@@ -25,9 +36,25 @@
             "pos": "1.000000 2.000000 3.000000",
             "point cloud": [
                 {
-                    "name": "Memo-10026",
-                    "pos": "-7.817807 -1.320513 -0.797452",
+                    "name": "door problem",
+                    "pos": "-7.800094 -1.256052 -1.032572",
+                    "wndpos": "-7.106903 -1.453876 -0.531750",
+                    "wndsize": "242.000000 116.000000 0.000000",
                     "description": "door problem\ncamera2\n"
+                },
+                {
+                    "name": "upper door problem",
+                    "pos": "-7.812399 0.097021 -1.135571",
+                    "wndpos": "-7.165564 -0.209765 -0.745733",
+                    "wndsize": "262.000000 115.000000 0.000000",
+                    "description": "upper door problem\ncamera2\n"
+                },
+                {
+                    "name": "floor problem",
+                    "pos": "-5.609196 -2.240087 -3.334496",
+                    "wndpos": "-5.381943 -1.835999 -2.739664",
+                    "wndsize": "304.000000 133.000000 0.000000",
+                    "description": "floor problem\ncamera2"
                 }
             ]
         },
@@ -38,9 +65,18 @@
             "pos": "1.000000 2.000000 3.000000",
             "point cloud": [
                 {
-                    "name": "Memo-10019",
-                    "pos": "-7.632938 -0.827695 -1.871433",
-                    "description": "have problem camera3\nnext door\n"
+                    "name": "door problem",
+                    "pos": "-7.764902 -1.334647 -0.605133",
+                    "wndpos": "-7.052611 -1.523281 -0.037039",
+                    "wndsize": "258.000000 129.000000 0.000000",
+                    "description": "door problem\ncamera3\n"
+                },
+                {
+                    "name": "Scratch",
+                    "pos": "-7.767586 -0.329637 -0.049207",
+                    "wndpos": "-7.086541 -0.130061 0.411986",
+                    "wndsize": "224.000000 123.000000 0.000000",
+                    "description": "Scratch\nCamera3\n"
                 }
             ]
         }
