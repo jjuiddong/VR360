@@ -55,7 +55,7 @@ public:
 	bool m_isShowPointCloud2; // tessellation
 	bool m_isShowPopupMenu;
 	
-	bool m_isUpdatePcWindowPos; // point information window position update when load file
+	bool m_isUpdatePcWindowPos; // point information 창 위치를 재조정한다.
 
 	// MouseMove Variable
 	POINT m_viewPos;
@@ -67,4 +67,3 @@ public:
 	Plane m_groundPlane1;
 	Plane m_groundPlane2;
 };
-

@@ -9,21 +9,21 @@
                 {
                     "name": "wall problem61233jjj",
                     "pos": "4.457887 1.880051 -0.117313",
-                    "wndpos": "4.119825 1.664517 -0.353840",
+                    "wndpos": "4.143236 1.591761 -0.428406",
                     "wndsize": "266.000000 157.000000 0.000000",
                     "description": "wall problem61233jjj\ncamera1sdfsdfkkdfj\nok\nsdfsdf"
                 },
                 {
                     "name": "P name problem test",
                     "pos": "0.239481 1.271520 -1.947453",
-                    "wndpos": "0.913249 1.336212 -1.613058",
+                    "wndpos": "0.838543 1.339034 -1.630628",
                     "wndsize": "334.000000 149.000000 0.000000",
                     "description": "P name problem test\ncamera1\nddddd\n"
                 },
                 {
                     "name": "testt2 p233",
                     "pos": "4.459774 0.794399 -0.822983",
-                    "wndpos": "4.081245 0.604666 -1.003914",
+                    "wndpos": "4.048893 0.517893 -1.187669",
                     "wndsize": "299.000000 180.000000 0.000000",
                     "description": "testt2 p233\ndddss\nsdsdffkklk\ndsfsdfddff\nsddf\n"
                 }
@@ -38,21 +38,21 @@
                 {
                     "name": "door problem",
                     "pos": "-7.800094 -1.256052 -1.032572",
-                    "wndpos": "-7.106903 -1.453876 -0.531750",
+                    "wndpos": "-7.091097 -1.502695 -0.600178",
                     "wndsize": "242.000000 116.000000 0.000000",
                     "description": "door problem\ncamera2\n"
                 },
                 {
                     "name": "upper door problem",
                     "pos": "-7.812399 0.097021 -1.135571",
-                    "wndpos": "-7.165564 -0.209765 -0.745733",
+                    "wndpos": "-7.173511 -0.182118 -0.676252",
                     "wndsize": "262.000000 115.000000 0.000000",
                     "description": "upper door problem\ncamera2\n"
                 },
                 {
                     "name": "floor problem",
                     "pos": "-5.609196 -2.240087 -3.334496",
-                    "wndpos": "-5.381943 -1.835999 -2.739664",
+                    "wndpos": "-5.262720 -2.136176 -2.750897",
                     "wndsize": "304.000000 133.000000 0.000000",
                     "description": "floor problem\ncamera2"
                 }
@@ -67,14 +67,14 @@
                 {
                     "name": "door problem",
                     "pos": "-7.764902 -1.334647 -0.605133",
-                    "wndpos": "-7.052611 -1.523281 -0.037039",
+                    "wndpos": "-7.047640 -1.530546 -0.178838",
                     "wndsize": "258.000000 129.000000 0.000000",
                     "description": "door problem\ncamera3\n"
                 },
                 {
                     "name": "Scratch",
                     "pos": "-7.767586 -0.329637 -0.049207",
-                    "wndpos": "-7.086541 -0.130061 0.411986",
+                    "wndpos": "-7.090130 -0.257586 0.211238",
                     "wndsize": "224.000000 123.000000 0.000000",
                     "description": "Scratch\nCamera3\n"
                 }

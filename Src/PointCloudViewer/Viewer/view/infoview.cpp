@@ -56,7 +56,7 @@ void cInfoView::OnRender(const float deltaSeconds)
 					if (ImGui::Button("Remove"))
 					{
 						Str128 msg;
-						msg.Format("Remove Point [ %s ]", pc->name.c_str());
+						msg.Format("Remove Point [ %s ]?", pc->name.c_str());
 						if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
 							, msg.c_str(), "CONFIRM", MB_YESNO))
 						{

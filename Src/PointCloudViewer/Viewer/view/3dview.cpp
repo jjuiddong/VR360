@@ -67,7 +67,9 @@ bool c3DView::Init(cRenderer &renderer)
 
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(
 		renderer, fileName);
-	m_miniMap.Create(renderer, 0, 50, 200, 200, "minimap.jpg");
+	m_miniMap.Create(renderer, 0, 50, 200, 200
+		, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0)
+		, "minimap.jpg");
 
 	m_shader.Create(renderer, 
 		"./media/shader11/uvcolor.fxo"
@@ -274,7 +276,12 @@ void c3DView::OnRender(const float deltaSeconds)
 				if (pc)
 				{
 					pc->pos = m_pointCloudPos;
-					pc->wndPos = m_pointCloudPos;
+					// point cloud의 약간 오른쪽에 창을 위치시킨다.
+					pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
+					pc->wndSize = Vector3(200, 150, 0);
+
+					// point cloud information창 위치를 조정한다.
+					m_isUpdatePcWindowPos = true;
 				}
 			}
 		}
@@ -285,9 +292,11 @@ void c3DView::OnRender(const float deltaSeconds)
 	cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
 	if (cam)
 	{
+		ImGuiWindowFlags wndFlags = 0;
 		const Ray ray = m_camera.GetRay();
 		const Plane plane(ray.dir, ray.orig);
 		bool isUpdateWindowPos = false;
+		set<int> rmPcs;
 
 		for (auto &pc : cam->pcds)
 		{
@@ -303,7 +312,8 @@ void c3DView::OnRender(const float deltaSeconds)
 			}
 
 			ImGui::PushID(pc);
-			if (ImGui::Begin(pc->name.c_str(), NULL))
+			bool isOpen = true;
+			if (ImGui::Begin(pc->name.c_str(), &isOpen, wndFlags))
 			{
 				bool isStoreWndPos = false;
 
@@ -373,10 +383,28 @@ void c3DView::OnRender(const float deltaSeconds)
 					pc->wndSize = Vector3(wndSize.x, wndSize.y, 0);
 				}
 			}
+
+			// close window -> show remove messagebox
+			if (!isOpen)
+			{
+				Str128 msg;
+				msg.Format("Remove Point [ %s ]?", pc->name.c_str());
+				if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+					, msg.c_str(), "CONFIRM", MB_YESNO))
+				{
+					rmPcs.insert(pc->id);
+				}
+			}
+
 			ImGui::End();
 			ImGui::PopID();
 		}
 		m_isUpdatePcWindowPos = isUpdateWindowPos;
+
+		// remove point
+		for (auto &id : rmPcs)
+			g_global->m_pcDb.RemoveData(id);
+
 	}//~cam
 }
 
