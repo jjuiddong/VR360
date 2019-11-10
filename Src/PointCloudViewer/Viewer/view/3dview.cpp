@@ -17,6 +17,8 @@ c3DView::c3DView(const string &name)
 	, m_isShowPointCloud2(true)
 	, m_isShowPopupMenu(false)
 	, m_isUpdatePcWindowPos(false)
+	, m_curCameraInfo(nullptr)
+	, m_pinImg(nullptr)
 {
 }
 
@@ -30,7 +32,7 @@ bool c3DView::Init(cRenderer &renderer)
 	const Vector3 eyePos = Vector3(0, 0, 0);
 	const Vector3 lookAt = Vector3(100, 0, 0);
 
-	const sRectf viewRect = GetWindowSizeAvailible();
+	const common::sRectf viewRect = GetWindowSizeAvailible();
 	m_camera.SetCamera(eyePos, lookAt, Vector3(0, 1, 0));
 	m_camera.SetProjection(MATH_PI / 4.f, viewRect.Width() / viewRect.Height(), 1.f, 100000.f);
 	m_camera.SetViewPort(viewRect.Width(), viewRect.Height());
@@ -67,9 +69,8 @@ bool c3DView::Init(cRenderer &renderer)
 
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(
 		renderer, fileName);
-	m_miniMap.Create(renderer, 0, 50, 200, 200
-		, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0)
-		, "minimap.jpg");
+	m_keyMap.Create(renderer, 0, 50, 200, 200
+		, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0));
 
 	m_shader.Create(renderer, 
 		"./media/shader11/uvcolor.fxo"
@@ -90,6 +91,9 @@ bool c3DView::Init(cRenderer &renderer)
 		| graphic::eVertexType::COLOR
 		| graphic::eVertexType::TEXTURE0
 	);
+
+	m_pinImg = graphic::cResourceManager::Get()->LoadTexture(renderer
+		, "./media/pin.png");
 
 	//m_pointCloud.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
 	JumpCamera("camera1");
@@ -133,10 +137,13 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		if (m_isShowTexture)
 			m_sphere.Render(renderer);
 
+		const float tessScale = m_curCameraInfo ? m_curCameraInfo->tessScale : 0.02f;
+
 		if (m_isShowPointCloud1)
 		{
 			Transform tfm;
 			tfm.scale = Vector3(-1, -1, 1);
+			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
 			m_pointCloud.SetShader(NULL);
 			m_pointCloud.Render(renderer, tfm.GetMatrixXM());
 		}
@@ -145,7 +152,8 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		{
 			Transform tfm;
 			tfm.scale = Vector3(-1, -1, 1);
-			renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * .02f;
+			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
+			renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
 			m_pointCloud.SetShader(&m_pointShader);
 			m_pointCloud.RenderTessellation(renderer, 1, tfm.GetMatrixXM());
 		}
@@ -200,20 +208,24 @@ void c3DView::OnRender(const float deltaSeconds)
 {
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 	m_viewPos = { (int)(pos.x), (int)(pos.y) };
-	const sRectf viewRect = GetWindowSizeAvailible();
+	const common::sRectf viewRect = GetWindowSizeAvailible();
 	ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(viewRect.Width(), viewRect.Height()));
 	//ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(100,100));
 
 	// HUD
 	// Render Menu Window
-	const int MENU_WIDTH = 320;
+	const float MENU_WIDTH = 320.f;
 	const float windowAlpha = 0.0f;
 	bool isOpen = true;
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar 
+		| ImGuiWindowFlags_NoResize 
+		| ImGuiWindowFlags_NoMove 
+		| ImGuiWindowFlags_NoBackground
+		| ImGuiWindowFlags_NoCollapse;
 	ImGui::SetNextWindowPos(pos);
-	ImGui::SetNextWindowBgAlpha(windowAlpha);
+	//ImGui::SetNextWindowBgAlpha(windowAlpha);
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 400));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), viewRect.Height()));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -228,33 +240,77 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::Checkbox("PointCloud2", &m_isShowPointCloud2);
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
 
-		if (m_miniMap.m_texture)
+		// render keymap
+		if (g_global->m_pcDb.IsLoad()
+			&& m_keyMap.m_texture)
 		{
-			auto *srv = m_miniMap.m_texture->m_texSRV;
-			ImGui::Image(srv, ImVec2(200,200));
+			auto *srv = m_keyMap.m_texture->m_texSRV;
+			const Vector2 keymapSize(200, 200); // keymap image size
+			const Vector2 keymapPos(0, viewRect.Height() - keymapSize.y - 20);
+
+			ImGui::SetCursorPos(*(ImVec2*)&keymapPos);
+			ImGui::Image(srv, *(ImVec2*)&keymapSize);
+
+			// render pin image
+			ImVec2 oldPos = ImGui::GetCursorPos();
+			if (m_pinImg)
+			{
+				const Vector2 offset(keymapPos.x - 5, keymapPos.y - 5); // dummy offset
+
+				for (auto &cam : g_global->m_pcDb.m_project.cams)
+				{
+					// keymapPos is uv coordinate system
+					const Vector2 uv = cam->keymapPos;
+					const Vector2 pos = offset +
+						Vector2(keymapSize.x * uv.x
+							, keymapSize.y * uv.y);
+
+					//ImGui::SetCursorPos(*(ImVec2*)&pos);
+					//ImGui::Image(m_pinImg->m_texSRV, ImVec2(10, 10));
+
+					ImGui::SetCursorPos(*(ImVec2*)&pos);
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
+					ImGui::PushID(cam);
+					if (ImGui::Button(" ", ImVec2(10,10)))
+						JumpCamera(cam->name);
+					ImGui::PopID();
+					ImGui::PopStyleColor(3);
+
+					const Vector2 txtPos = pos + Vector2(0, 10.f);
+					const ImVec4 txtColor = (cam == m_curCameraInfo) ?
+						ImVec4(1, 0, 0, 1) : ImVec4(0, 0, 1, 1);
+					ImGui::SetCursorPos(*(ImVec2*)&txtPos);
+					ImGui::PushStyleColor(ImGuiCol_Text, txtColor);
+					ImGui::TextUnformatted(cam->name.c_str());
+					ImGui::PopStyleColor();
+				}
+			}
+			ImGui::SetCursorPos(oldPos); // recovery
 		}
 
 		// minimap jump button
-		{
-			auto &renderer = GetRenderer();
+		//{
+		//	auto &renderer = GetRenderer();
 
-			ImGui::SetWindowPos(ImVec2(30, -105));
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
-			if (ImGui::Button("Camera1"))
-				JumpCamera("camera1");
+		//	ImGui::SetWindowPos(ImVec2(30, -105));
+		//	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
+		//	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
+		//	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
+		//	if (ImGui::Button("Camera1"))
+		//		JumpCamera("Pin1");
 
-			ImGui::SetWindowPos(ImVec2(115, -130));
-			if (ImGui::Button("Camera2"))
-				JumpCamera("camera2");
+		//	ImGui::SetWindowPos(ImVec2(115, -130));
+		//	if (ImGui::Button("Camera2"))
+		//		JumpCamera("Pin2");
 
-			ImGui::SetWindowPos(ImVec2(115, -80));
-			if (ImGui::Button("Camera3"))
-				JumpCamera("camera3");
+		//	ImGui::SetWindowPos(ImVec2(115, -80));
+		//	if (ImGui::Button("Camera3"))
+		//		JumpCamera("Pin3");
 
-			ImGui::PopStyleColor(3);
-		}
+		//	ImGui::PopStyleColor(3);
+		//}
 	}
 	ImGui::PopStyleColor();
 	ImGui::End();
@@ -289,7 +345,8 @@ void c3DView::OnRender(const float deltaSeconds)
 	}
 
 	// Render Point Cloud Information Window
-	cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
+	cPointCloudDB::sCamera *cam 
+		= g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
 	if (cam)
 	{
 		ImGuiWindowFlags wndFlags = 0;
@@ -409,7 +466,7 @@ void c3DView::OnRender(const float deltaSeconds)
 }
 
 
-void c3DView::OnResizeEnd(const framework::eDockResize::Enum type, const sRectf &rect)
+void c3DView::OnResizeEnd(const framework::eDockResize::Enum type, const common::sRectf &rect)
 {
 	if (type == eDockResize::DOCK_WINDOW)
 	{
@@ -469,6 +526,7 @@ bool c3DView::JumpCamera(const string &cameraName)
 	m_pointCloud.Create(GetRenderer(), common::GenerateId(), cam->pc3dFileName);
 
 	m_isUpdatePcWindowPos = true; // use OnRender() function
+	m_curCameraInfo = cam;
 
 	return true;
 }
@@ -602,7 +660,7 @@ void c3DView::OnMouseDown(const sf::Mouse::Button &button, const POINT mousePt)
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 		m_rotateLen = (p1 - ray.orig).Length();// min(500.f, (p1 - ray.orig).Length());
 
-		m_pickPos = PickPointCloud(mousePt);
+		//m_pickPos = PickPointCloud(mousePt);
 	}
 	break;
 
@@ -664,7 +722,7 @@ void c3DView::OnEventProc(const sf::Event &evt)
 	switch (evt.type)
 	{
 	case sf::Event::KeyPressed:
-		switch (evt.key.code)
+		switch (evt.key.cmd)
 		{
 		case sf::Keyboard::Return: break;
 		case sf::Keyboard::Space: break;
@@ -699,7 +757,7 @@ void c3DView::OnEventProc(const sf::Event &evt)
 		const POINT pos = { curPos.x - m_viewPos.x, curPos.y - m_viewPos.y };
 		if (sf::Event::MouseButtonPressed == evt.type)
 		{
-			const sRectf viewRect = GetWindowSizeAvailible(true);
+			const common::sRectf viewRect = GetWindowSizeAvailible(true);
 			if (viewRect.IsIn((float)curPos.x, (float)curPos.y))
 				OnMouseDown(evt.mouseButton.button, pos);
 		}
@@ -732,7 +790,7 @@ void c3DView::OnResetDevice()
 	cRenderer &renderer = GetRenderer();
 
 	// update viewport
-	sRectf viewRect = { 0, 0, m_rect.Width() - 15, m_rect.Height() - 50 };
+	common::sRectf viewRect = { 0, 0, m_rect.Width() - 15, m_rect.Height() - 50 };
 	m_camera.SetViewPort(viewRect.Width(), viewRect.Height());
 
 	cViewport vp = GetRenderer().m_viewPort;

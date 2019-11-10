@@ -30,7 +30,7 @@ void cInfoView::OnRender(const float deltaSeconds)
 
 	set<int> rmPcs;
 
-	for (auto &cam : pcDb.m_datas)
+	for (auto &cam : pcDb.m_project.cams)
 	{
 		ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
 		if (ImGui::TreeNode(cam->name.c_str()))
@@ -41,7 +41,7 @@ void cInfoView::OnRender(const float deltaSeconds)
 				if (ImGui::TreeNode(pc->name.c_str()))
 				{
 					ImGui::PushID(pc+1);
-					Str128 text;
+					common::Str128 text;
 					text.Format("Pos : %.2f, %.2f, %.2f", pc->pos.x, pc->pos.y, pc->pos.z);
 					ImGui::Selectable(text.c_str());
 					ImGui::PopID();
@@ -55,7 +55,7 @@ void cInfoView::OnRender(const float deltaSeconds)
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
 					if (ImGui::Button("Remove"))
 					{
-						Str128 msg;
+						common::Str128 msg;
 						msg.Format("Remove Point [ %s ]?", pc->name.c_str());
 						if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
 							, msg.c_str(), "CONFIRM", MB_YESNO))

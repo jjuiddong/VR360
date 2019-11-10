@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "view/3dview.h"
 #include "view/infoview.h"
+#include "view/hierarchyview.h"
 
 
 class cViewer : public framework::cGameMain2
@@ -70,9 +71,17 @@ bool cViewer::OnInit()
 	g_global = new cGlobal();
 	g_global->Init();
 
+	bool result = false;
+
+	cHierarchyView *hierarchyView = new cHierarchyView("Hierarchy");
+	hierarchyView->Create(eDockState::DOCKWINDOW, eDockSlot::TAB, this, NULL, 1.f
+		, framework::eDockSizingOption::PIXEL);
+	result = hierarchyView->Init(m_renderer);
+	assert(result);
+
 	c3DView *view = new c3DView("3D Map");
-	view->Create(eDockState::DOCKWINDOW, eDockSlot::TAB, this, NULL);
-	bool result = view->Init(m_renderer);
+	view->Create(eDockState::DOCKWINDOW, eDockSlot::RIGHT, this, hierarchyView, 0.8f);
+	result = view->Init(m_renderer);
 	assert(result);
 
 	cInfoView *infoView = new cInfoView("Information");
@@ -83,6 +92,7 @@ bool cViewer::OnInit()
 
 	g_global->m_3dView = view;
 	g_global->m_infoView = infoView;
+	g_global->m_hierarchyView = hierarchyView;
 
 	m_gui.SetContext();
 	m_gui.SetStyleColorsDark();
@@ -110,7 +120,7 @@ void cViewer::OnEventProc(const sf::Event &evt)
 	switch (evt.type)
 	{
 	case sf::Event::KeyPressed:
-		switch (evt.key.code)
+		switch (evt.key.cmd)
 		{
 		case sf::Keyboard::Escape: close(); break;
 		}

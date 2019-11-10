@@ -1,84 +1,36 @@
 {
-    "cameras": [
-        {
-            "name": "camera1",
-            "point cloud 3d filename": ".\/media\/workobj\/test_1.obj",
-            "point cloud texture filename": ".\/media\/workobj\/1.bmp",
-            "pos": "1.000000 2.000000 3.000000",
-            "point cloud": [
-                {
-                    "name": "wall problem61233jjj",
-                    "pos": "4.457887 1.880051 -0.117313",
-                    "wndpos": "4.143236 1.591761 -0.428406",
-                    "wndsize": "266.000000 157.000000 0.000000",
-                    "description": "wall problem61233jjj\ncamera1sdfsdfkkdfj\nok\nsdfsdf"
-                },
-                {
-                    "name": "P name problem test",
-                    "pos": "0.239481 1.271520 -1.947453",
-                    "wndpos": "0.838543 1.339034 -1.630628",
-                    "wndsize": "334.000000 149.000000 0.000000",
-                    "description": "P name problem test\ncamera1\nddddd\n"
-                },
-                {
-                    "name": "testt2 p233",
-                    "pos": "4.459774 0.794399 -0.822983",
-                    "wndpos": "4.048893 0.517893 -1.187669",
-                    "wndsize": "299.000000 180.000000 0.000000",
-                    "description": "testt2 p233\ndddss\nsdsdffkklk\ndsfsdfddff\nsddf\n"
-                }
-            ]
-        },
-        {
-            "name": "camera2",
-            "point cloud 3d filename": ".\/media\/workobj\/test_2.obj",
-            "point cloud texture filename": ".\/media\/workobj\/2.bmp",
-            "pos": "1.000000 2.000000 3.000000",
-            "point cloud": [
-                {
-                    "name": "door problem",
-                    "pos": "-7.800094 -1.256052 -1.032572",
-                    "wndpos": "-7.091097 -1.502695 -0.600178",
-                    "wndsize": "242.000000 116.000000 0.000000",
-                    "description": "door problem\ncamera2\n"
-                },
-                {
-                    "name": "upper door problem",
-                    "pos": "-7.812399 0.097021 -1.135571",
-                    "wndpos": "-7.173511 -0.182118 -0.676252",
-                    "wndsize": "262.000000 115.000000 0.000000",
-                    "description": "upper door problem\ncamera2\n"
-                },
-                {
-                    "name": "floor problem",
-                    "pos": "-5.609196 -2.240087 -3.334496",
-                    "wndpos": "-5.262720 -2.136176 -2.750897",
-                    "wndsize": "304.000000 133.000000 0.000000",
-                    "description": "floor problem\ncamera2"
-                }
-            ]
-        },
-        {
-            "name": "camera3",
-            "point cloud 3d filename": ".\/media\/workobj\/test_3.obj",
-            "point cloud texture filename": ".\/media\/workobj\/3.bmp",
-            "pos": "1.000000 2.000000 3.000000",
-            "point cloud": [
-                {
-                    "name": "door problem",
-                    "pos": "-7.764902 -1.334647 -0.605133",
-                    "wndpos": "-7.047640 -1.530546 -0.178838",
-                    "wndsize": "258.000000 129.000000 0.000000",
-                    "description": "door problem\ncamera3\n"
-                },
-                {
-                    "name": "Scratch",
-                    "pos": "-7.767586 -0.329637 -0.049207",
-                    "wndpos": "-7.090130 -0.257586 0.211238",
-                    "wndsize": "224.000000 123.000000 0.000000",
-                    "description": "Scratch\nCamera3\n"
-                }
-            ]
-        }
-    ]
+    "project": {
+        "name": "Project Name",
+        "path": "D:\\pcd\\",
+        "keymap filename": "D:\\pcd\\minimap.png",
+        "cameras": [
+            {
+                "name": "Pin1",
+                "point cloud 3d filename": "D:\\pcd\\workobj\\SamplePly.obj",
+                "point cloud texture filename": "D:\\pcd\\workobj\\MeshImg.JPG",
+                "pos": "0.000000 0.000000 0.000000",
+                "keymap pos": "0.672000 0.671000",
+                "tess scale": "3",
+                "point cloud": ""
+            },
+            {
+                "name": "Pin2",
+                "point cloud 3d filename": "D:\\pcd\\workobj\\test_1.obj",
+                "point cloud texture filename": "D:\\pcd\\workobj\\1.bmp",
+                "pos": "0.000000 0.000000 0.000000",
+                "keymap pos": "0.253000 0.275000",
+                "tess scale": "0.0199999996",
+                "point cloud": ""
+            },
+            {
+                "name": "Pin3",
+                "point cloud 3d filename": "D:\\pcd\\workobj\\test_3.obj",
+                "point cloud texture filename": "D:\\pcd\\workobj\\3.bmp",
+                "pos": "0.000000 0.000000 0.000000",
+                "keymap pos": "0.680000 0.272000",
+                "tess scale": "0.0199999996",
+                "point cloud": ""
+            }
+        ]
+    }
 }

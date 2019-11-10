@@ -19,29 +19,38 @@ cPointCloudDB::~cPointCloudDB()
 }
 
 
+// read project file
 // read point cloud information
 //
 // {
-//	   "cameras" : [
-//	       {
-//             "name" : "camera1",
-//             "pos" : "1 2 3",
-//			   "point cloud 3d filename" : "",
-//			   "point cloud texture filename" : "",
-//             "point cloud" : [
-//                 {
-//                     "name" : "name 1",
-//                     "pos" : "1 2 3",
-//                     "description" : "memo 1"
-//                 },
-//                 {
-//                     "name" : "name 2",
-//                     "pos" : "1 2 3",
-//                     "description" : "memo 2"
-//                 }
-//            ]
-//         }
-//     ]
+//	   "project" :
+//		{
+//			"name" : "project name",
+//			"path" : "project file path",
+//			"keymap filename" : "filename.jpg",
+//			"cameras" : [
+//				{
+//					"name" : "camera1",
+//					"pos" : "1 2 3",
+//					"keymap pos" : "1 2",
+//					"tess scale" : 1.f,
+//					"point cloud 3d filename" : "",
+//					"point cloud texture filename" : "",
+//					"point cloud" : [
+//						{
+//							"name" : "name 1",
+//							"pos" : "1 2 3",
+//							"description" : "memo 1"
+//						},
+//						{
+//							"name" : "name 2",
+//							"pos" : "1 2 3",
+//							"description" : "memo 2"
+//						}
+//					]
+//				}
+//			]
+//		}
 // }
 //
 bool cPointCloudDB::Read(const StrPath &fileName)
@@ -51,6 +60,8 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 	if (!fileName.IsFileExist())
 		return false;
 
+	m_fileName = fileName;
+
 	try
 	{
 		ptree props;
@@ -58,56 +69,71 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 		const string version = props.get<string>("version", "ver.1");
 
 		// parse point cloud data
-		ptree::assoc_iterator itor0 = props.find("cameras");
+		ptree::assoc_iterator itor0 = props.find("project");
 		if (props.not_found() != itor0)
 		{
-			ptree &child_field0 = props.get_child("cameras");
-			for (ptree::value_type &vt0 : child_field0)
+			//ptree &child_field0 = props.get_child("project");
+			m_project.name = itor0->second.get<string>("name", "project name");
+			m_project.dir = itor0->second.get<string>("path", "c:\\project\\");
+			m_project.keymapFileName = itor0->second.get<string>(
+				"keymap filename", "filename.jpg");
+
+			ptree::assoc_iterator itor1 = itor0->second.find("cameras");
+			if (props.not_found() != itor1)
 			{
-				const string name = vt0.second.get<string>("name");
-				const string fileName3d = vt0.second.get<string>("point cloud 3d filename", "");
-				const string textureFileName = vt0.second.get<string>("point cloud texture filename", "");
-				const string posStr = vt0.second.get<string>("pos");
-				const Vector3 pos = ParseVector3(posStr);
-				sCamera *cam = AddCamera(name, pos);
-				if (!cam)
-					continue;
-
-				cam->pc3dFileName = fileName3d;
-				cam->pcTextureFileName = textureFileName;
-
-				ptree::assoc_iterator itor = vt0.second.find("point cloud");
-				if (vt0.second.not_found() != itor)
+				ptree &child_field1 = itor0->second.get_child("cameras");
+				for (ptree::value_type &vt0 : child_field1)
 				{
-					ptree &child_field = vt0.second.get_child("point cloud");
-					for (ptree::value_type &vt : child_field)
+					const string name = vt0.second.get<string>("name");
+					const string fileName3d = vt0.second.get<string>("point cloud 3d filename", "");
+					const string textureFileName = vt0.second.get<string>("point cloud texture filename", "");
+					const string posStr = vt0.second.get<string>("pos");
+					const Vector3 pos = ParseVector3(posStr);
+					const string keymapPosStr = vt0.second.get<string>("keymap pos");
+					const Vector2 kpos = ParseVector2(keymapPosStr);
+					const float tessScale = vt0.second.get<float>("tess scale", 0.02f);
+
+					sCamera *cam = AddCamera(name, pos);
+					if (!cam)
+						continue;
+
+					cam->pc3dFileName = fileName3d;
+					cam->pcTextureFileName = textureFileName;
+					cam->keymapPos = kpos;
+					cam->tessScale = tessScale;
+
+					ptree::assoc_iterator itor2 = vt0.second.find("point cloud");
+					if (vt0.second.not_found() != itor2)
 					{
-						sPCData pc;
-						pc.name = vt.second.get<string>("name");
+						ptree &child_field2 = vt0.second.get_child("point cloud");
+						for (ptree::value_type &vt : child_field2)
+						{
+							sPCData pc;
+							pc.name = vt.second.get<string>("name");
 
-						const string posStr = vt.second.get<string>("pos");
-						pc.pos = ParseVector3(posStr);
+							const string posStr = vt.second.get<string>("pos");
+							pc.pos = ParseVector3(posStr);
 
-						const string wndPosStr = vt.second.get<string>("wndpos", "");
-						pc.wndPos = ParseVector3(wndPosStr);
-						if (pc.wndPos.IsEmpty())
-							pc.wndPos = pc.pos;
+							const string wndPosStr = vt.second.get<string>("wndpos", "");
+							pc.wndPos = ParseVector3(wndPosStr);
+							if (pc.wndPos.IsEmpty())
+								pc.wndPos = pc.pos;
 
-						const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
-						pc.wndSize = ParseVector3(wndSizeStr);
+							const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
+							pc.wndSize = ParseVector3(wndSizeStr);
 
-						pc.desc = vt.second.get<string>("description");
+							pc.desc = vt.second.get<string>("description");
 
-						AddData(name, pc);
-					} //~point cloud
-				}
-			} //~camras
-		}
-
+							AddData(name, pc);
+						} //~point cloud
+					}
+				} //~camras
+			} // find camras
+		} //~project
 	}
 	catch (std::exception &e)
 	{
-		Str128 msg;
+ 		common::Str128 msg;
 		msg.Format("Read Error!!, Point Cloud Data File [ %s ]\n%s"
 			, fileName.c_str(), e.what());
 		MessageBoxA(NULL, msg.c_str(), "ERROR", MB_OK);
@@ -124,16 +150,24 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 	{
 		ptree props;
 
+		ptree proj;
+		proj.put("name", m_project.name);
+		proj.put("path", m_project.dir);
+		proj.put("keymap filename", m_project.keymapFileName);
+
 		ptree cams;
-		for (auto &cam : m_datas)
+		for (auto &cam : m_project.cams)
 		{
 			ptree c;
 			c.put("name", cam->name.c_str());
 			c.put("point cloud 3d filename", cam->pc3dFileName.c_str());
 			c.put("point cloud texture filename", cam->pcTextureFileName.c_str());
-			Str128 text;
+			common::Str128 text;
 			text.Format("%f %f %f", cam->pos.x, cam->pos.y, cam->pos.z);
 			c.put("pos", text.c_str());
+			text.Format("%f %f", cam->keymapPos.x, cam->keymapPos.y);
+			c.put("keymap pos", text.c_str());
+			c.put("tess scale", cam->tessScale);
 
 			ptree pcs;
 			for (auto &pc : cam->pcds)
@@ -141,7 +175,7 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 				ptree z;
 				z.put("name", pc->name.c_str());
 
-				Str128 text;
+				common::Str128 text;
 				text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
 				z.put("pos", text.c_str());
 
@@ -161,13 +195,15 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 			cams.push_back(std::make_pair("", c));
 		}
 
-		props.add_child("cameras", cams);
+		proj.push_back(std::make_pair("cameras", cams));
+		props.add_child("project", proj);
+		//props.add_child("cameras", cams);
 
 		boost::property_tree::write_json(fileName.c_str(), props);
 	}
 	catch (std::exception &e)
 	{
-		Str128 msg;
+		common::Str128 msg;
 		msg.Format("Write Error!!, Point Cloud File [ %s ]\n%s"
 			, fileName.c_str(), e.what());
 		MessageBoxA(NULL, msg.c_str(), "ERROR", MB_OK);
@@ -187,7 +223,7 @@ cPointCloudDB::sCamera* cPointCloudDB::AddCamera(const string &name, const Vecto
 	cam = new sCamera;
 	cam->name = name.c_str();
 	cam->pos = pos;
-	m_datas.push_back(cam);
+	m_project.cams.push_back(cam);
 	return cam;
 }
 
@@ -198,7 +234,7 @@ bool cPointCloudDB::RemoveCamera(const string &name)
 	if (!cam)
 		return false; // not exist
 
-	common::removevector(m_datas, cam);
+	common::removevector(m_project.cams, cam);
 
 	// remove all point cloud
 	for (auto &pc : cam->pcds)
@@ -212,7 +248,7 @@ bool cPointCloudDB::RemoveCamera(const string &name)
 
 cPointCloudDB::sCamera* cPointCloudDB::FindCamera(const string &name)
 {
-	for (auto &cam : m_datas)
+	for (auto &cam : m_project.cams)
 		if (cam->name == name)
 			return cam;
 	return NULL;
@@ -222,7 +258,7 @@ cPointCloudDB::sCamera* cPointCloudDB::FindCamera(const string &name)
 // id: point cloud id
 cPointCloudDB::sCamera* cPointCloudDB::FindCameraByPointId(const int pointId)
 {
-	for (auto &cam : m_datas)
+	for (auto &cam : m_project.cams)
 		for (auto &pc : cam->pcds)
 			if (pc->id == pointId)
 				return cam;
@@ -284,7 +320,7 @@ bool cPointCloudDB::RemoveData(const int pointId)
 
 cPointCloudDB::sPCData* cPointCloudDB::FindData(const int pointId)
 {
-	for (auto &cam : m_datas)
+	for (auto &cam : m_project.cams)
 		for (auto &pc : cam->pcds)
 			if (pc->id == pointId)
 				return pc;
@@ -320,13 +356,35 @@ Vector3 cPointCloudDB::ParseVector3(const string &str)
 }
 
 
+// parse string to Vector2
+// string format : x y
+Vector2 cPointCloudDB::ParseVector2(const string &str)
+{
+	vector<string> toks;
+	common::tokenizer(str, " ", "", toks);
+	if (toks.size() >= 2)
+	{
+		return Vector2((float)atof(toks[0].c_str())
+			, (float)atof(toks[1].c_str()));
+	}
+	return Vector2(0,0);
+}
+
+
+bool cPointCloudDB::IsLoad()
+{
+	return !m_project.name.empty();
+}
+
+
 void cPointCloudDB::Clear()
 {
-	for (auto &cam : m_datas)
+	for (auto &cam : m_project.cams)
 	{
 		for (auto &pc : cam->pcds)
 			delete pc;
 		delete cam;
 	}
-	m_datas.clear();
+	m_project.cams.clear();
+	m_project = {};
 }

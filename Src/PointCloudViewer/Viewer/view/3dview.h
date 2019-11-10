@@ -16,7 +16,7 @@ public:
 	virtual void OnUpdate(const float deltaSeconds) override;
 	virtual void OnRender(const float deltaSeconds) override;
 	virtual void OnPreRender(const float deltaSeconds) override;
-	virtual void OnResizeEnd(const framework::eDockResize::Enum type, const sRectf &rect) override;
+	virtual void OnResizeEnd(const framework::eDockResize::Enum type, const common::sRectf &rect) override;
 	virtual void OnEventProc(const sf::Event &evt) override;
 	virtual void OnResetDevice() override;
 
@@ -39,10 +39,13 @@ public:
 	graphic::cQuad2D m_quad1;
 	graphic::cQuad2D m_quad2;
 	graphic::cQuad2D m_quad3;
-	graphic::cQuad2D m_miniMap;
+	graphic::cQuad2D m_keyMap;
 	graphic::cShader11 m_shader;
 	graphic::cShader11 m_pointShader;
 	graphic::cRenderTarget m_renderTarget;
+	graphic::cTexture *m_pinImg;
+
+	cPointCloudDB::sCamera *m_curCameraInfo; // current select camera
 
 	Vector3 m_pickPos;
 	Vector3 m_pointCloudPos;
@@ -64,6 +67,6 @@ public:
 	Vector3 m_mousePickPos; // mouse cursor pos in ground picking
 	bool m_mouseDown[3]; // Left, Right, Middle
 	float m_rotateLen;
-	Plane m_groundPlane1;
-	Plane m_groundPlane2;
+	common::Plane m_groundPlane1;
+	common::Plane m_groundPlane2;
 };

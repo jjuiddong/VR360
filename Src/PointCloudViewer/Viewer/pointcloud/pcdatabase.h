@@ -3,13 +3,17 @@
 // point cloud database
 //
 //	- data structure
-//		- camera[]
-//		    - camera name
-//			- camera pos
-//			- point[]
-//				- name
-//				- pos
-//				- description
+//		- project
+//			- project name
+//			- directory path
+//			- keymap filename
+//			- camera[]
+//				- camera name
+//				- camera pos
+//				- point[]
+//					- name
+//					- pos
+//					- description
 //
 #pragma once
 
@@ -25,7 +29,7 @@ public:
 		Vector3 pos; // point cloud position
 		Vector3 wndPos; // information window poisition (ui)
 		Vector3 wndSize; // information window size (ui) (z not use)
-		Str256 desc; // description
+		common::Str256 desc; // description
 	};
 
 	struct sCamera
@@ -34,7 +38,18 @@ public:
 		string pc3dFileName; // point cloud 3d data file name
 		string pcTextureFileName; // point cloud texture file name
 		Vector3 pos;
+		Vector2 keymapPos;
+		float tessScale; // point cloud tessellation scale
+		graphic::Quaternion rot; // point cloud rotation
 		vector<sPCData*> pcds; // point cloud data
+	};
+
+	struct sProject
+	{
+		string name; // project name
+		string dir; // file directory
+		string keymapFileName; // keymap filename
+		vector<sCamera*> cams;
 	};
 
 	cPointCloudDB();
@@ -51,13 +66,16 @@ public:
 	bool RemoveData(const int pointId);
 	sPCData* FindData(const int pointId);
 	sPCData* FindData(const string &cameraName, const Vector3 &pos);
+	bool IsLoad();
 	void Clear();
 
 
 protected:
 	Vector3 ParseVector3(const string &str);
+	Vector2 ParseVector2(const string &str);
 
 
 public:
-	vector<sCamera*> m_datas;
+	StrPath m_fileName; // project filename
+	sProject m_project;
 };

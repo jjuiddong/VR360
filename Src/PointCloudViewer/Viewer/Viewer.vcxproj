@@ -74,6 +74,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)../../Package/</OutDir>
     <IntDir>$(SolutionDir)../Obj/$(ProjectName)/$(Configuration)/</IntDir>
+    <TargetName>$(ProjectName)d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -94,7 +95,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;USE_D3D11_MATH;_ITERATOR_DEBUG_LEVEL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>../../../../Common/Framework/external/sfml/include;../../../../Common/Framework/external/sfml/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../Common/Framework11/external/sfml/include;../../../../Common/Framework11/external/sfml/src;../../../../Common/Framework11/external/imgui/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -122,10 +123,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;USE_D3D11_MATH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;USE_D3D11_MATH;NDEBUG;_WINDOWS;USE_D3D11_MATH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>../../../../Common/Framework/external/sfml/include;../../../../Common/Framework/external/sfml/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../Common/Framework11/external/sfml/include;../../../../Common/Framework11/external/sfml/src;../../../../Common/Framework11/external/imgui/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -161,6 +162,7 @@
     </ClCompile>
     <ClCompile Include="viewer.cpp" />
     <ClCompile Include="view\3dview.cpp" />
+    <ClCompile Include="view\hierarchyview.cpp" />
     <ClCompile Include="view\infoview.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,6 +170,7 @@
     <ClInclude Include="pointcloud\pcdatabase.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="view\3dview.h" />
+    <ClInclude Include="view\hierarchyview.h" />
     <ClInclude Include="view\infoview.h" />
   </ItemGroup>
   <ItemGroup>
