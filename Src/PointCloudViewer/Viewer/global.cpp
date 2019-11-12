@@ -31,9 +31,9 @@ bool cGlobal::ReadProjectFile(const StrPath &fileName)
 		return false;
 
 	// load keymap file
-	m_3dView->m_keyMap.m_texture
-		= graphic::cResourceManager::Get()->LoadTexture(
-			m_3dView->GetRenderer(), m_pcDb.m_project.keymapFileName);
+	//m_3dView->m_keyMap.m_texture
+	//	= graphic::cResourceManager::Get()->LoadTexture(
+	//		m_3dView->GetRenderer(), m_pcDb.m_project.keymapFileName);
 
 	m_3dView->m_curCameraInfo = nullptr;
 

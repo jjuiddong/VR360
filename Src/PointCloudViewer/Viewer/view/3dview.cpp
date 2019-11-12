@@ -96,7 +96,7 @@ bool c3DView::Init(cRenderer &renderer)
 		, "./media/pin.png");
 
 	//m_pointCloud.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
-	JumpCamera("camera1");
+	JumpPin("camera1");
 
 	return true;
 }
@@ -175,23 +175,29 @@ void c3DView::OnPreRender(const float deltaSeconds)
 
 
 		// Render Line Point to Information Window
-		cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
-		if (cam)
+		cPointCloudDB::sFloor *floor 
+			= g_global->m_pcDb.FindFloor(g_global->m_currentFloorName);
+		if (floor)
 		{
-			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
-
-			const Ray ray = GetMainCamera().GetRay();
-			const Plane plane(ray.dir, ray.orig);
-			for (auto &pc : cam->pcds)
+			cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(
+				floor, g_global->m_currentCameraName);
+			if (cam)
 			{
-				if (plane.Distance(pc->pos) < 0.f)
-					continue;
+				renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
 
-				renderer.m_dbgLine.SetLine(pc->pos, pc->wndPos, 0.001f);
-				renderer.m_dbgLine.Render(renderer);
+				const Ray ray = GetMainCamera().GetRay();
+				const Plane plane(ray.dir, ray.orig);
+				for (auto &pc : cam->pcds)
+				{
+					if (plane.Distance(pc->pos) < 0.f)
+						continue;
+
+					renderer.m_dbgLine.SetLine(pc->pos, pc->wndPos, 0.001f);
+					renderer.m_dbgLine.Render(renderer);
+				}
+
+				renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 			}
-
-			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 		}
 		
 		//renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
@@ -257,34 +263,37 @@ void c3DView::OnRender(const float deltaSeconds)
 			{
 				const Vector2 offset(keymapPos.x - 5, keymapPos.y - 5); // dummy offset
 
-				for (auto &cam : g_global->m_pcDb.m_project.cams)
+				for (auto &floor : g_global->m_pcDb.m_project.floors)
 				{
-					// keymapPos is uv coordinate system
-					const Vector2 uv = cam->keymapPos;
-					const Vector2 pos = offset +
-						Vector2(keymapSize.x * uv.x
-							, keymapSize.y * uv.y);
+					for (auto &cam : floor->cams)
+					{
+						// keymapPos is uv coordinate system
+						const Vector2 uv = cam->keymapPos;
+						const Vector2 pos = offset +
+							Vector2(keymapSize.x * uv.x
+								, keymapSize.y * uv.y);
 
-					//ImGui::SetCursorPos(*(ImVec2*)&pos);
-					//ImGui::Image(m_pinImg->m_texSRV, ImVec2(10, 10));
+						//ImGui::SetCursorPos(*(ImVec2*)&pos);
+						//ImGui::Image(m_pinImg->m_texSRV, ImVec2(10, 10));
 
-					ImGui::SetCursorPos(*(ImVec2*)&pos);
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
-					ImGui::PushID(cam);
-					if (ImGui::Button(" ", ImVec2(10,10)))
-						JumpCamera(cam->name);
-					ImGui::PopID();
-					ImGui::PopStyleColor(3);
+						ImGui::SetCursorPos(*(ImVec2*)&pos);
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
+						ImGui::PushID(cam);
+						if (ImGui::Button(" ", ImVec2(10,10)))
+							JumpPin(cam->name.c_str());
+						ImGui::PopID();
+						ImGui::PopStyleColor(3);
 
-					const Vector2 txtPos = pos + Vector2(0, 10.f);
-					const ImVec4 txtColor = (cam == m_curCameraInfo) ?
-						ImVec4(1, 0, 0, 1) : ImVec4(0, 0, 1, 1);
-					ImGui::SetCursorPos(*(ImVec2*)&txtPos);
-					ImGui::PushStyleColor(ImGuiCol_Text, txtColor);
-					ImGui::TextUnformatted(cam->name.c_str());
-					ImGui::PopStyleColor();
+						const Vector2 txtPos = pos + Vector2(0, 10.f);
+						const ImVec4 txtColor = (cam == m_curCameraInfo) ?
+							ImVec4(1, 0, 0, 1) : ImVec4(0, 0, 1, 1);
+						ImGui::SetCursorPos(*(ImVec2*)&txtPos);
+						ImGui::PushStyleColor(ImGuiCol_Text, txtColor);
+						ImGui::TextUnformatted(cam->name.c_str());
+						ImGui::PopStyleColor();
+					}
 				}
 			}
 			ImGui::SetCursorPos(oldPos); // recovery
@@ -327,142 +336,153 @@ void c3DView::OnRender(const float deltaSeconds)
 		{
 			if (!m_pickPos.IsEmpty())
 			{
-				cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
-					g_global->m_currentCameraName);
-				if (pc)
+				cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+					g_global->m_currentFloorName);
+				if (floor)
 				{
-					pc->pos = m_pointCloudPos;
-					// point cloud의 약간 오른쪽에 창을 위치시킨다.
-					pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
-					pc->wndSize = Vector3(200, 150, 0);
+					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
+						floor, g_global->m_currentCameraName);
+					if (pc)
+					{
+						pc->pos = m_pointCloudPos;
+						// point cloud의 약간 오른쪽에 창을 위치시킨다.
+						pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
+						pc->wndSize = Vector3(200, 150, 0);
 
-					// point cloud information창 위치를 조정한다.
-					m_isUpdatePcWindowPos = true;
-				}
+						// point cloud information창 위치를 조정한다.
+						m_isUpdatePcWindowPos = true;
+					}
+				}//~floor
 			}
 		}
 		ImGui::EndPopup();
 	}
 
 	// Render Point Cloud Information Window
-	cPointCloudDB::sCamera *cam 
-		= g_global->m_pcDb.FindCamera(g_global->m_currentCameraName);
-	if (cam)
+	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+		g_global->m_currentFloorName);
+	if (floor)
 	{
-		ImGuiWindowFlags wndFlags = 0;
-		const Ray ray = m_camera.GetRay();
-		const Plane plane(ray.dir, ray.orig);
-		bool isUpdateWindowPos = false;
-		set<int> rmPcs;
-
-		for (auto &pc : cam->pcds)
+		cPointCloudDB::sCamera *cam
+			= g_global->m_pcDb.FindCamera(floor, g_global->m_currentCameraName);
+		if (cam)
 		{
-			if (plane.Distance(pc->pos) < 0.f)
-				continue;
+			ImGuiWindowFlags wndFlags = 0;
+			const Ray ray = m_camera.GetRay();
+			const Plane plane(ray.dir, ray.orig);
+			bool isUpdateWindowPos = false;
+			set<int> rmPcs;
 
-			if (m_isUpdatePcWindowPos || m_mouseDown[1])
+			for (auto &pc : cam->pcds)
 			{
-				const Vector2 screenPos = m_camera.GetScreenPos(pc->wndPos);
-				const ImVec2 wndPos(screenPos.x, screenPos.y);
-				ImGui::SetNextWindowPos(wndPos);
-				ImGui::SetNextWindowSize(ImVec2(pc->wndSize.x, pc->wndSize.y));
-			}
+				if (plane.Distance(pc->pos) < 0.f)
+					continue;
 
-			ImGui::PushID(pc);
-			bool isOpen = true;
-			if (ImGui::Begin(pc->name.c_str(), &isOpen, wndFlags))
-			{
-				bool isStoreWndPos = false;
-
-				// 메모 내용의 가장 윗줄을 타이틀 이름으로 설정한다.
-				// 편집 도중에 윈도우 타이틀 이름을 바꾸면 포커스를 잃기 때문에
-				// 포커스가 바뀔 때 업데이트 한다.
-				static StrId focusWndName;
-				StrId changeTitleWnd;
-				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+				if (m_isUpdatePcWindowPos || m_mouseDown[1])
 				{
-					if (focusWndName != pc->name)
-					{
-						changeTitleWnd = focusWndName;
-						focusWndName = pc->name;
-					}
-				}
-				else
-				{
-					if (focusWndName == pc->name)
-					{
-						changeTitleWnd = focusWndName;
-						focusWndName.clear();
-					}
+					const Vector2 screenPos = m_camera.GetScreenPos(pc->wndPos);
+					const ImVec2 wndPos(screenPos.x, screenPos.y);
+					ImGui::SetNextWindowPos(wndPos);
+					ImGui::SetNextWindowSize(ImVec2(pc->wndSize.x, pc->wndSize.y));
 				}
 
-				if (!changeTitleWnd.empty())
+				ImGui::PushID(pc);
+				bool isOpen = true;
+				if (ImGui::Begin(pc->name.c_str(), &isOpen, wndFlags))
 				{
-					for (auto &p : cam->pcds)
+					bool isStoreWndPos = false;
+
+					// 메모 내용의 가장 윗줄을 타이틀 이름으로 설정한다.
+					// 편집 도중에 윈도우 타이틀 이름을 바꾸면 포커스를 잃기 때문에
+					// 포커스가 바뀔 때 업데이트 한다.
+					static StrId focusWndName;
+					StrId changeTitleWnd;
+					if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
 					{
-						if (changeTitleWnd == p->name)
+						if (focusWndName != pc->name)
 						{
-							vector<string> toks;
-							common::tokenizer(p->desc.c_str(), "\n", "", toks);
-							if (!toks.empty() && (p->name != toks[0]))
+							changeTitleWnd = focusWndName;
+							focusWndName = pc->name;
+						}
+					}
+					else
+					{
+						if (focusWndName == pc->name)
+						{
+							changeTitleWnd = focusWndName;
+							focusWndName.clear();
+						}
+					}
+
+					if (!changeTitleWnd.empty())
+					{
+						for (auto &p : cam->pcds)
+						{
+							if (changeTitleWnd == p->name)
 							{
-								p->name = toks[0];
-								isUpdateWindowPos = true;
-								isStoreWndPos = true;
-								break;
+								vector<string> toks;
+								common::tokenizer(p->desc.c_str(), "\n", "", toks);
+								if (!toks.empty() && (p->name != toks[0]))
+								{
+									p->name = toks[0];
+									isUpdateWindowPos = true;
+									isStoreWndPos = true;
+									break;
+								}
 							}
 						}
 					}
-				}
-				//~ change window title name
+					//~ change window title name
 
-				const ImVec2 parentWndSize = ImGui::GetWindowSize();
-				const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
-				ImGui::PushID(pc+1);
-				ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE, wndSize);
+					const ImVec2 parentWndSize = ImGui::GetWindowSize();
+					const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
+					ImGui::PushID(pc + 1);
+					ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE, wndSize);
+					ImGui::PopID();
+
+					// 창이 마우스로 선택되면, 위치정보를 업데이트 한다.
+					// 창은 사용자가 임의로 위치를 이동할 수 있다.
+					if (isStoreWndPos
+						|| (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered()))
+					{
+						ImVec2 wndPos = ImGui::GetWindowPos();
+						// 2d 좌표를 3d로 좌표로 변환해서 저장한다.
+						const Ray r = m_camera.GetRay((int)wndPos.x, (int)wndPos.y);
+						const float len = r.orig.Distance(pc->pos);
+						Vector3 pos = r.orig + r.dir * len * 0.9f;
+						pc->wndPos = pos;
+					}
+					else
+					{
+						const ImVec2 wndSize = ImGui::GetWindowSize();
+						pc->wndSize = Vector3(wndSize.x, wndSize.y, 0);
+					}
+				}
+
+				// close window -> show remove messagebox
+				if (!isOpen)
+				{
+					Str128 msg;
+					msg.Format("Remove Point [ %s ]?", pc->name.c_str());
+					if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+						, msg.c_str(), "CONFIRM", MB_YESNO))
+					{
+						rmPcs.insert(pc->id);
+					}
+				}
+
+				ImGui::End();
 				ImGui::PopID();
-
-				// 창이 마우스로 선택되면, 위치정보를 업데이트 한다.
-				// 창은 사용자가 임의로 위치를 이동할 수 있다.
-				if (isStoreWndPos
-					|| (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered()))
-				{
-					ImVec2 wndPos = ImGui::GetWindowPos();
-					// 2d 좌표를 3d로 좌표로 변환해서 저장한다.
-					const Ray r = m_camera.GetRay((int)wndPos.x, (int)wndPos.y);
-					const float len = r.orig.Distance(pc->pos);
-					Vector3 pos = r.orig + r.dir * len * 0.9f;
-					pc->wndPos = pos;
-				}
-				else
-				{
-					const ImVec2 wndSize = ImGui::GetWindowSize();
-					pc->wndSize = Vector3(wndSize.x, wndSize.y, 0);
-				}
 			}
+			m_isUpdatePcWindowPos = isUpdateWindowPos;
 
-			// close window -> show remove messagebox
-			if (!isOpen)
-			{
-				Str128 msg;
-				msg.Format("Remove Point [ %s ]?", pc->name.c_str());
-				if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-					, msg.c_str(), "CONFIRM", MB_YESNO))
-				{
-					rmPcs.insert(pc->id);
-				}
-			}
+			// remove point
+			for (auto &id : rmPcs)
+				g_global->m_pcDb.RemoveData(floor, id);
 
-			ImGui::End();
-			ImGui::PopID();
-		}
-		m_isUpdatePcWindowPos = isUpdateWindowPos;
+		}//~cam
+	}//~floor
 
-		// remove point
-		for (auto &id : rmPcs)
-			g_global->m_pcDb.RemoveData(id);
-
-	}//~cam
 }
 
 
@@ -511,11 +531,15 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 }
 
 
-bool c3DView::JumpCamera(const string &cameraName)
+bool c3DView::JumpPin(const string &pinName)
 {
-	g_global->m_currentCameraName = cameraName;
+	g_global->m_currentCameraName = pinName;
 
-	cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(cameraName);
+	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+		g_global->m_currentFloorName);
+	if (!floor)
+		return false;
+	cPointCloudDB::sCamera *cam = g_global->m_pcDb.FindCamera(floor, pinName);
 	if (!cam)
 		return false;
 

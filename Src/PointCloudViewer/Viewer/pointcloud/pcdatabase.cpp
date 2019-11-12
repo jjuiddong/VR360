@@ -27,27 +27,30 @@ cPointCloudDB::~cPointCloudDB()
 //		{
 //			"name" : "project name",
 //			"path" : "project file path",
-//			"keymap filename" : "filename.jpg",
-//			"cameras" : [
+//			"floors" : [
 //				{
-//					"name" : "camera1",
-//					"pos" : "1 2 3",
-//					"keymap pos" : "1 2",
-//					"tess scale" : 1.f,
-//					"point cloud 3d filename" : "",
-//					"point cloud texture filename" : "",
-//					"point cloud" : [
-//						{
-//							"name" : "name 1",
-//							"pos" : "1 2 3",
-//							"description" : "memo 1"
-//						},
-//						{
-//							"name" : "name 2",
-//							"pos" : "1 2 3",
-//							"description" : "memo 2"
-//						}
-//					]
+//				"keymap filename" : "filename.jpg",
+//				"cameras" : [
+//					{
+//						"name" : "camera1",
+//						"pos" : "1 2 3",
+//						"keymap pos" : "1 2",
+//						"tess scale" : 1.f,
+//						"point cloud 3d filename" : "",
+//						"point cloud texture filename" : "",
+//						"point cloud" : [
+//							{
+//								"name" : "name 1",
+//								"pos" : "1 2 3",
+//								"description" : "memo 1"
+//							},
+//							{
+//									"name" : "name 2",
+//									"pos" : "1 2 3",
+//									"description" : "memo 2"
+//							}
+//						]
+//					}
 //				}
 //			]
 //		}
@@ -72,63 +75,76 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 		ptree::assoc_iterator itor0 = props.find("project");
 		if (props.not_found() != itor0)
 		{
-			//ptree &child_field0 = props.get_child("project");
 			m_project.name = itor0->second.get<string>("name", "project name");
 			m_project.dir = itor0->second.get<string>("path", "c:\\project\\");
-			m_project.keymapFileName = itor0->second.get<string>(
-				"keymap filename", "filename.jpg");
 
-			ptree::assoc_iterator itor1 = itor0->second.find("cameras");
+			ptree::assoc_iterator itor1 = itor0->second.find("floors");
 			if (props.not_found() != itor1)
 			{
-				ptree &child_field1 = itor0->second.get_child("cameras");
-				for (ptree::value_type &vt0 : child_field1)
+				ptree &child_field0 = itor0->second.get_child("floors");
+				for (ptree::value_type &vt0 : child_field0)
 				{
-					const string name = vt0.second.get<string>("name");
-					const string fileName3d = vt0.second.get<string>("point cloud 3d filename", "");
-					const string textureFileName = vt0.second.get<string>("point cloud texture filename", "");
-					const string posStr = vt0.second.get<string>("pos");
-					const Vector3 pos = ParseVector3(posStr);
-					const string keymapPosStr = vt0.second.get<string>("keymap pos");
-					const Vector2 kpos = ParseVector2(keymapPosStr);
-					const float tessScale = vt0.second.get<float>("tess scale", 0.02f);
+					const string floorName = vt0.second.get<string>("name");
+					sFloor *floor = AddFloor(floorName);
+					if (!floor)
+						throw std::exception();
 
-					sCamera *cam = AddCamera(name, pos);
-					if (!cam)
-						continue;
+					floor->keymapFileName = vt0.second.get<string>(
+						"keymap filename", "filename.jpg");
 
-					cam->pc3dFileName = fileName3d;
-					cam->pcTextureFileName = textureFileName;
-					cam->keymapPos = kpos;
-					cam->tessScale = tessScale;
-
-					ptree::assoc_iterator itor2 = vt0.second.find("point cloud");
-					if (vt0.second.not_found() != itor2)
+					ptree::assoc_iterator itor2 = vt0.second.find("cameras");
+					if (props.not_found() != itor2)
 					{
-						ptree &child_field2 = vt0.second.get_child("point cloud");
-						for (ptree::value_type &vt : child_field2)
+						ptree &child_field1 = vt0.second.get_child("cameras");
+						for (ptree::value_type &vt1 : child_field1)
 						{
-							sPCData pc;
-							pc.name = vt.second.get<string>("name");
+							const string name = vt1.second.get<string>("name");
+							const string fileName3d = vt1.second.get<string>("point cloud 3d filename", "");
+							const string textureFileName = vt1.second.get<string>("point cloud texture filename", "");
+							const string posStr = vt1.second.get<string>("pos");
+							const Vector3 pos = ParseVector3(posStr);
+							const string keymapPosStr = vt1.second.get<string>("keymap pos");
+							const Vector2 kpos = ParseVector2(keymapPosStr);
+							const float tessScale = vt1.second.get<float>("tess scale", 0.02f);
 
-							const string posStr = vt.second.get<string>("pos");
-							pc.pos = ParseVector3(posStr);
+							sCamera *cam = AddCamera(floor, name, pos);
+							if (!cam)
+								continue;
 
-							const string wndPosStr = vt.second.get<string>("wndpos", "");
-							pc.wndPos = ParseVector3(wndPosStr);
-							if (pc.wndPos.IsEmpty())
-								pc.wndPos = pc.pos;
+							cam->pc3dFileName = fileName3d;
+							cam->pcTextureFileName = textureFileName;
+							cam->keymapPos = kpos;
+							cam->tessScale = tessScale;
 
-							const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
-							pc.wndSize = ParseVector3(wndSizeStr);
+							ptree::assoc_iterator itor3 = vt1.second.find("point cloud");
+							if (vt1.second.not_found() != itor3)
+							{
+								ptree &child_field2 = vt1.second.get_child("point cloud");
+								for (ptree::value_type &vt : child_field2)
+								{
+									sPCData pc;
+									pc.name = vt.second.get<string>("name");
 
-							pc.desc = vt.second.get<string>("description");
+									const string posStr = vt.second.get<string>("pos");
+									pc.pos = ParseVector3(posStr);
 
-							AddData(name, pc);
-						} //~point cloud
-					}
-				} //~camras
-			} // find camras
+									const string wndPosStr = vt.second.get<string>("wndpos", "");
+									pc.wndPos = ParseVector3(wndPosStr);
+									if (pc.wndPos.IsEmpty())
+										pc.wndPos = pc.pos;
+
+									const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
+									pc.wndSize = ParseVector3(wndSizeStr);
+
+									pc.desc = vt.second.get<string>("description");
+
+									AddData(floor, name, pc);
+								} //~point cloud
+							}
+						} //~camras
+					} // find camras
+				}//~floors
+			}//find floors
 		} //~project
 	}
 	catch (std::exception &e)
@@ -151,53 +167,62 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 		ptree props;
 
 		ptree proj;
-		proj.put("name", m_project.name);
-		proj.put("path", m_project.dir);
-		proj.put("keymap filename", m_project.keymapFileName);
+		proj.put("name", m_project.name.c_str());
+		proj.put("path", m_project.dir.c_str());
 
-		ptree cams;
-		for (auto &cam : m_project.cams)
+		ptree floors;
+		for (auto &floor : m_project.floors)
 		{
-			ptree c;
-			c.put("name", cam->name.c_str());
-			c.put("point cloud 3d filename", cam->pc3dFileName.c_str());
-			c.put("point cloud texture filename", cam->pcTextureFileName.c_str());
-			common::Str128 text;
-			text.Format("%f %f %f", cam->pos.x, cam->pos.y, cam->pos.z);
-			c.put("pos", text.c_str());
-			text.Format("%f %f", cam->keymapPos.x, cam->keymapPos.y);
-			c.put("keymap pos", text.c_str());
-			c.put("tess scale", cam->tessScale);
+			ptree fl;
+			fl.put("name", floor->name.c_str());
+			fl.put("keymap filename", floor->keymapFileName.c_str());
 
-			ptree pcs;
-			for (auto &pc : cam->pcds)
+			ptree cams;
+			for (auto &cam : floor->cams)
 			{
-				ptree z;
-				z.put("name", pc->name.c_str());
-
+				ptree c;
+				c.put("name", cam->name.c_str());
+				c.put("point cloud 3d filename", cam->pc3dFileName.c_str());
+				c.put("point cloud texture filename", cam->pcTextureFileName.c_str());
 				common::Str128 text;
-				text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
-				z.put("pos", text.c_str());
+				text.Format("%f %f %f", cam->pos.x, cam->pos.y, cam->pos.z);
+				c.put("pos", text.c_str());
+				text.Format("%f %f", cam->keymapPos.x, cam->keymapPos.y);
+				c.put("keymap pos", text.c_str());
+				c.put("tess scale", cam->tessScale);
 
-				if (pc->wndPos.IsEmpty())
-					pc->wndPos = pc->pos;
-				text.Format("%f %f %f", pc->wndPos.x, pc->wndPos.y, pc->wndPos.z);
-				z.put("wndpos", text.c_str());
+				ptree pcs;
+				for (auto &pc : cam->pcds)
+				{
+					ptree z;
+					z.put("name", pc->name.c_str());
 
-				text.Format("%f %f %f", pc->wndSize.x, pc->wndSize.y, pc->wndSize.z);
-				z.put("wndsize", text.c_str());
+					common::Str128 text;
+					text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
+					z.put("pos", text.c_str());
 
-				z.put("description", pc->desc.c_str());
+					if (pc->wndPos.IsEmpty())
+						pc->wndPos = pc->pos;
+					text.Format("%f %f %f", pc->wndPos.x, pc->wndPos.y, pc->wndPos.z);
+					z.put("wndpos", text.c_str());
 
-				pcs.push_back(std::make_pair("", z));
-			}
-			c.add_child("point cloud", pcs);
-			cams.push_back(std::make_pair("", c));
-		}
+					text.Format("%f %f %f", pc->wndSize.x, pc->wndSize.y, pc->wndSize.z);
+					z.put("wndsize", text.c_str());
 
-		proj.push_back(std::make_pair("cameras", cams));
+					z.put("description", pc->desc.c_str());
+
+					pcs.push_back(std::make_pair("", z));
+				}
+				c.add_child("point cloud", pcs);
+				cams.push_back(std::make_pair("", c));
+			}//~cams
+
+			fl.add_child("cameras", cams);
+			floors.push_back(std::make_pair("", fl));
+		}//~floors
+
+		proj.add_child("floors", floors);
 		props.add_child("project", proj);
-		//props.add_child("cameras", cams);
 
 		boost::property_tree::write_json(fileName.c_str(), props);
 	}
@@ -213,28 +238,74 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 }
 
 
-// add camera, and return camera instance
-cPointCloudDB::sCamera* cPointCloudDB::AddCamera(const string &name, const Vector3 &pos)
+cPointCloudDB::sFloor* cPointCloudDB::AddFloor(const StrId &name)
 {
-	sCamera *cam = FindCamera(name);
+	sFloor *floor = FindFloor(name);
+	if (floor)
+		return NULL; // already exist
+
+	floor = new sFloor;
+	floor->name = name.c_str();
+	m_project.floors.push_back(floor);
+	return floor;
+}
+
+
+bool cPointCloudDB::RemoveFloor(const StrId &name)
+{
+	sFloor *floor = FindFloor(name);
+	if (!floor)
+		return false; // not exist
+
+	common::removevector(m_project.floors, floor);
+
+	// remove all point cloud
+	for (auto &cam : floor->cams)
+	{
+		for (auto &pc : cam->pcds)
+			delete pc;
+		cam->pcds.clear();
+		delete cam;
+	}
+	floor->cams.clear();
+	delete floor;
+	return true;
+}
+
+
+cPointCloudDB::sFloor* cPointCloudDB::FindFloor(const StrId &name)
+{
+	for (auto &floor : m_project.floors)
+		if (floor->name == name)
+			return floor;
+	return NULL;
+}
+
+
+// add camera, and return camera instance
+cPointCloudDB::sCamera* cPointCloudDB::AddCamera(sFloor *floor
+	, const StrId &name, const Vector3 &pos)
+{
+	sCamera *cam = FindCamera(floor, name);
 	if (cam)
 		return NULL; // already exist
 
 	cam = new sCamera;
 	cam->name = name.c_str();
 	cam->pos = pos;
-	m_project.cams.push_back(cam);
+	floor->cams.push_back(cam);
 	return cam;
 }
 
 
-bool cPointCloudDB::RemoveCamera(const string &name)
+bool cPointCloudDB::RemoveCamera(sFloor *floor
+	, const StrId &name)
 {
-	sCamera *cam = FindCamera(name);
+	sCamera *cam = FindCamera(floor, name);
 	if (!cam)
 		return false; // not exist
 
-	common::removevector(m_project.cams, cam);
+	common::removevector(floor->cams, cam);
 
 	// remove all point cloud
 	for (auto &pc : cam->pcds)
@@ -246,9 +317,10 @@ bool cPointCloudDB::RemoveCamera(const string &name)
 }
 
 
-cPointCloudDB::sCamera* cPointCloudDB::FindCamera(const string &name)
+cPointCloudDB::sCamera* cPointCloudDB::FindCamera(sFloor *floor
+	, const StrId &name)
 {
-	for (auto &cam : m_project.cams)
+	for (auto &cam : floor->cams)
 		if (cam->name == name)
 			return cam;
 	return NULL;
@@ -256,9 +328,10 @@ cPointCloudDB::sCamera* cPointCloudDB::FindCamera(const string &name)
 
 
 // id: point cloud id
-cPointCloudDB::sCamera* cPointCloudDB::FindCameraByPointId(const int pointId)
+cPointCloudDB::sCamera* cPointCloudDB::FindCameraByPointId(sFloor *floor
+	, const int pointId)
 {
-	for (auto &cam : m_project.cams)
+	for (auto &cam : floor->cams)
 		for (auto &pc : cam->pcds)
 			if (pc->id == pointId)
 				return cam;
@@ -268,9 +341,10 @@ cPointCloudDB::sCamera* cPointCloudDB::FindCameraByPointId(const int pointId)
 
 // create and return sPCData
 // generate unique id
-cPointCloudDB::sPCData* cPointCloudDB::CreateData(const string &cameraName)
+cPointCloudDB::sPCData* cPointCloudDB::CreateData(sFloor *floor
+	, const StrId &cameraName)
 {
-	sCamera *cam = FindCamera(cameraName);
+	sCamera *cam = FindCamera(floor, cameraName);
 	RETV(!cam, NULL); // not exist camera
 
 	const int id = common::GenerateId();
@@ -285,12 +359,12 @@ cPointCloudDB::sPCData* cPointCloudDB::CreateData(const string &cameraName)
 
 // add point cloud data, return id
 // if fail, return -1
-int cPointCloudDB::AddData(const string &cameraName, const sPCData &pc)
+int cPointCloudDB::AddData(sFloor *floor, const StrId &cameraName, const sPCData &pc)
 {
-	sCamera *cam = FindCamera(cameraName);
+	sCamera *cam = FindCamera(floor, cameraName);
 	RETV(!cam, NULL); // not exist camera
 
-	sPCData *data = FindData(cameraName, pc.pos);
+	sPCData *data = FindData(floor, cameraName, pc.pos);
 	if (data)
 		return -1; // already exist
 
@@ -304,12 +378,12 @@ int cPointCloudDB::AddData(const string &cameraName, const sPCData &pc)
 
 // remove point cloud data
 // if success, return true or false
-bool cPointCloudDB::RemoveData(const int pointId)
+bool cPointCloudDB::RemoveData(sFloor *floor, const int pointId)
 {
-	sCamera *cam = FindCameraByPointId(pointId);
+	sCamera *cam = FindCameraByPointId(floor, pointId);
 	RETV(!cam, NULL); // not exist camera
 
-	sPCData *data = FindData(pointId);
+	sPCData *data = FindData(floor, pointId);
 	RETV(!data, NULL); // not exist point
 
 	common::removevector(cam->pcds, data);
@@ -318,9 +392,9 @@ bool cPointCloudDB::RemoveData(const int pointId)
 }
 
 
-cPointCloudDB::sPCData* cPointCloudDB::FindData(const int pointId)
+cPointCloudDB::sPCData* cPointCloudDB::FindData(sFloor *floor, const int pointId)
 {
-	for (auto &cam : m_project.cams)
+	for (auto &cam : floor->cams)
 		for (auto &pc : cam->pcds)
 			if (pc->id == pointId)
 				return pc;
@@ -328,9 +402,10 @@ cPointCloudDB::sPCData* cPointCloudDB::FindData(const int pointId)
 }
 
 
-cPointCloudDB::sPCData* cPointCloudDB::FindData(const string &cameraName, const Vector3 &pos)
+cPointCloudDB::sPCData* cPointCloudDB::FindData(sFloor *floor
+	, const StrId &cameraName, const Vector3 &pos)
 {
-	sCamera *cam = FindCamera(cameraName);
+	sCamera *cam = FindCamera(floor, cameraName);
 	RETV(!cam, NULL); // not exist camera
 
 	for (auto &pc : cam->pcds)
@@ -377,14 +452,76 @@ bool cPointCloudDB::IsLoad()
 }
 
 
-void cPointCloudDB::Clear()
+// deep copy project data structure
+// src -> dst
+bool cPointCloudDB::CopyProjectData(const sProject &src, sProject &dst)
 {
-	for (auto &cam : m_project.cams)
+	dst = src;
+	dst.floors.clear(); // remove before copy
+
+	for (auto &floor : src.floors)
+	{
+		sFloor *f = new sFloor;
+		*f = *floor;
+		f->cams.clear();// remove before copy
+
+		for (auto &cam : floor->cams)
+		{
+			sCamera *c = new sCamera;
+			*c = *cam;
+			c->pcds.clear(); // remove before copy
+
+			for (auto &pc : cam->pcds)
+			{
+				sPCData *p = new sPCData;
+				*p = *pc;
+				c->pcds.push_back(p);
+			}
+			f->cams.push_back(c);			
+		}
+
+		dst.floors.push_back(f);
+	}
+
+	return true;
+}
+
+
+// remove project data
+bool cPointCloudDB::RemoveProjectData(sProject &proj)
+{
+	for (auto &floor : proj.floors)
+	{
+		for (auto &cam : floor->cams)
+		{
+			for (auto &pc : cam->pcds)
+				delete pc;
+			delete cam;
+		}
+		floor->cams.clear();
+	}
+	proj = {};
+	return true;
+}
+
+
+bool cPointCloudDB::RemoveFloor(sFloor *floor)
+{
+	// remove all point cloud
+	for (auto &cam : floor->cams)
 	{
 		for (auto &pc : cam->pcds)
 			delete pc;
+		cam->pcds.clear();
 		delete cam;
 	}
-	m_project.cams.clear();
-	m_project = {};
+	floor->cams.clear();
+	delete floor;
+	return true;
+}
+
+
+void cPointCloudDB::Clear()
+{
+	RemoveProjectData(m_project);
 }

@@ -23,7 +23,7 @@ public:
 
 protected:
 	Vector3 PickPointCloud(const POINT mousePt);
-	bool JumpCamera(const string &cameraName);
+	bool JumpPin(const string &pinName);
 
 	void UpdateLookAt(const POINT &mousePt);
 	void OnWheelMove(const float delta, const POINT mousePt);

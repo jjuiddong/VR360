@@ -6,14 +6,15 @@
 //		- project
 //			- project name
 //			- directory path
-//			- keymap filename
-//			- camera[]
-//				- camera name
-//				- camera pos
-//				- point[]
-//					- name
-//					- pos
-//					- description
+//			- floor[]
+//				- keymap filename
+//				- camera[]
+//					- camera name
+//					- camera pos
+//					- point[]
+//						- name
+//						- pos
+//						- description
 //
 #pragma once
 
@@ -25,7 +26,7 @@ public:
 	struct sPCData // point cloud data
 	{
 		int id; // unique id, (auto setting)
-		string name;
+		StrId name;
 		Vector3 pos; // point cloud position
 		Vector3 wndPos; // information window poisition (ui)
 		Vector3 wndSize; // information window size (ui) (z not use)
@@ -34,9 +35,9 @@ public:
 
 	struct sCamera
 	{
-		string name; // unique name
-		string pc3dFileName; // point cloud 3d data file name
-		string pcTextureFileName; // point cloud texture file name
+		StrId name; // unique name
+		StrPath pc3dFileName; // point cloud 3d data file name
+		StrPath pcTextureFileName; // point cloud texture file name
 		Vector3 pos;
 		Vector2 keymapPos;
 		float tessScale; // point cloud tessellation scale
@@ -44,12 +45,18 @@ public:
 		vector<sPCData*> pcds; // point cloud data
 	};
 
+	struct sFloor
+	{
+		StrId name;
+		StrPath keymapFileName; // keymap filename
+		vector<sCamera*> cams;
+	};
+
 	struct sProject
 	{
-		string name; // project name
-		string dir; // file directory
-		string keymapFileName; // keymap filename
-		vector<sCamera*> cams;
+		StrId name; // project name
+		StrPath dir; // project directory
+		vector<sFloor*> floors;
 	};
 
 	cPointCloudDB();
@@ -57,15 +64,24 @@ public:
 
 	bool Read(const StrPath &fileName);
 	bool Write(const StrPath &fileName);
-	sCamera* AddCamera(const string &name, const Vector3 &pos);
-	bool RemoveCamera(const string &name);
-	sCamera* FindCamera(const string &name);
-	sCamera* FindCameraByPointId(const int pointId);
-	sPCData* CreateData(const string &cameraName);
-	int AddData(const string &cameraName, const sPCData &pc);
-	bool RemoveData(const int pointId);
-	sPCData* FindData(const int pointId);
-	sPCData* FindData(const string &cameraName, const Vector3 &pos);
+	sFloor* AddFloor(const StrId &name);
+	bool RemoveFloor(const StrId &name);
+	sFloor* FindFloor(const StrId &name);
+	sCamera* AddCamera(sFloor *floor, const StrId &name, const Vector3 &pos);
+	bool RemoveCamera(sFloor *floor, const StrId &name);
+	sCamera* FindCamera(sFloor *floor, const StrId &name);
+	sCamera* FindCameraByPointId(sFloor *floor, const int pointId);
+
+	sPCData* CreateData(sFloor *floor, const StrId &cameraName);
+	int AddData(sFloor *floor, const StrId &cameraName, const sPCData &pc);
+	bool RemoveData(sFloor *floor, const int pointId);
+	sPCData* FindData(sFloor *floor, const int pointId);
+	sPCData* FindData(sFloor *floor, const StrId &cameraName, const Vector3 &pos);
+
+	static bool CopyProjectData(const sProject &src, sProject &dst);
+	static bool RemoveProjectData(sProject &proj);
+	static bool RemoveFloor(sFloor *floor);
+
 	bool IsLoad();
 	void Clear();
 

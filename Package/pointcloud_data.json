@@ -2,34 +2,90 @@
     "project": {
         "name": "Project Name",
         "path": "D:\\pcd\\",
-        "keymap filename": "D:\\pcd\\minimap.png",
-        "cameras": [
+        "floors": [
             {
-                "name": "Pin1",
-                "point cloud 3d filename": "D:\\pcd\\workobj\\SamplePly.obj",
-                "point cloud texture filename": "D:\\pcd\\workobj\\MeshImg.JPG",
-                "pos": "0.000000 0.000000 0.000000",
-                "keymap pos": "0.672000 0.671000",
-                "tess scale": "3",
-                "point cloud": ""
+                "name": "1F",
+                "keymap filename": "D:\\pcd\\minimap.jpg",
+                "cameras": [
+                    {
+                        "name": "Pin1",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.267000 0.280000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    },
+                    {
+                        "name": "Pin2",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    },
+                    {
+                        "name": "Pin3",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    },
+                    {
+                        "name": "Pin4",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    },
+                    {
+                        "name": "Pin5",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    }
+                ]
             },
             {
-                "name": "Pin2",
-                "point cloud 3d filename": "D:\\pcd\\workobj\\test_1.obj",
-                "point cloud texture filename": "D:\\pcd\\workobj\\1.bmp",
-                "pos": "0.000000 0.000000 0.000000",
-                "keymap pos": "0.253000 0.275000",
-                "tess scale": "0.0199999996",
-                "point cloud": ""
-            },
-            {
-                "name": "Pin3",
-                "point cloud 3d filename": "D:\\pcd\\workobj\\test_3.obj",
-                "point cloud texture filename": "D:\\pcd\\workobj\\3.bmp",
-                "pos": "0.000000 0.000000 0.000000",
-                "keymap pos": "0.680000 0.272000",
-                "tess scale": "0.0199999996",
-                "point cloud": ""
+                "name": "2F-2",
+                "keymap filename": "D:\\pcd\\minimap.jpg",
+                "cameras": [
+                    {
+                        "name": "Pin10",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    },
+                    {
+                        "name": "Pin11",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    },
+                    {
+                        "name": "Pin12",
+                        "point cloud 3d filename": "",
+                        "point cloud texture filename": "",
+                        "pos": "0.000000 0.000000 0.000000",
+                        "keymap pos": "0.000000 0.000000",
+                        "tess scale": "0.0199999996",
+                        "point cloud": ""
+                    }
+                ]
             }
         ]
     }

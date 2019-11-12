@@ -19,23 +19,22 @@ public:
 protected:
 	bool RenderNewProjectDlg();
 	bool RenderEditCameraDlg();
+	bool RenderHierarchy(common::sFolderNode *node);
+	bool RenderHierarchy2(common::sFolderNode *node);
+	bool UpdateDirectoryHierarchy(const StrPath &searchPath);
 
 
 public:
-
 	enum class eProjectEditMode {None, New, Modify};
 
 	eProjectEditMode m_projEditMode;
-	common::Str64 m_projName; // project name
-	StrPath m_projDirPath; // project directory path
-	StrPath m_projKeymapFileName; // project keymap filename
+	common::sFolderNode *m_hierarchy; // directory hierarchy
+
+	// project creation variable
 	graphic::cTexture *m_keymapTexture; // keymap texture
-	cPointCloudDB::sCamera *m_selCam = nullptr;
-	common::Str64 m_camName; // camera name
-	StrPath m_camPcdFileName; // camera point cloud filename
-	StrPath m_camTextureFileName; // camera texture filename
-	Vector2 m_camPos;
-	float m_camTessScale;
+	cPointCloudDB::sFloor *m_selFloor;
+	cPointCloudDB::sCamera *m_selCam;
 	cPointCloudDB::sProject m_editProj;
+	string m_selFileStr;
 	graphic::cTexture *m_pinImg;
 };

@@ -9,6 +9,8 @@
 
 using common::StrId;
 using common::StrPath;
+using common::WStrId;
+using common::WStrPath;
 using common::Vector2;
 using common::Vector3;
 using common::Vector4;
