@@ -13,6 +13,11 @@ cPointCloudDB::cPointCloudDB()
 {
 }
 
+cPointCloudDB::cPointCloudDB(const cPointCloudDB &rhs)
+{
+	operator=(rhs);
+}
+
 cPointCloudDB::~cPointCloudDB()
 {
 	Clear();
@@ -30,9 +35,9 @@ cPointCloudDB::~cPointCloudDB()
 //			"floors" : [
 //				{
 //				"keymap filename" : "filename.jpg",
-//				"cameras" : [
+//				"pins" : [
 //					{
-//						"name" : "camera1",
+//						"name" : "pin1",
 //						"pos" : "1 2 3",
 //						"keymap pos" : "1 2",
 //						"tess scale" : 1.f,
@@ -78,73 +83,86 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 			m_project.name = itor0->second.get<string>("name", "project name");
 			m_project.dir = itor0->second.get<string>("path", "c:\\project\\");
 
-			ptree::assoc_iterator itor1 = itor0->second.find("floors");
+			ptree::assoc_iterator itor1 = itor0->second.find("dates");
 			if (props.not_found() != itor1)
 			{
-				ptree &child_field0 = itor0->second.get_child("floors");
-				for (ptree::value_type &vt0 : child_field0)
+				ptree &child_field0 = itor0->second.get_child("dates");
+				for (ptree::value_type &vt3 : child_field0)
 				{
-					const string floorName = vt0.second.get<string>("name");
-					sFloor *floor = AddFloor(floorName);
-					if (!floor)
+					const string dateName = vt3.second.get<string>("name");
+					sDate *date = AddDate(dateName);
+					if (!date)
 						throw std::exception();
 
-					floor->keymapFileName = vt0.second.get<string>(
-						"keymap filename", "filename.jpg");
-
-					ptree::assoc_iterator itor2 = vt0.second.find("cameras");
+					ptree::assoc_iterator itor2 = vt3.second.find("floors");
 					if (props.not_found() != itor2)
 					{
-						ptree &child_field1 = vt0.second.get_child("cameras");
-						for (ptree::value_type &vt1 : child_field1)
+						ptree &child_field1 = vt3.second.get_child("floors");
+						for (ptree::value_type &vt0 : child_field1)
 						{
-							const string name = vt1.second.get<string>("name");
-							const string fileName3d = vt1.second.get<string>("point cloud 3d filename", "");
-							const string textureFileName = vt1.second.get<string>("point cloud texture filename", "");
-							const string posStr = vt1.second.get<string>("pos");
-							const Vector3 pos = ParseVector3(posStr);
-							const string keymapPosStr = vt1.second.get<string>("keymap pos");
-							const Vector2 kpos = ParseVector2(keymapPosStr);
-							const float tessScale = vt1.second.get<float>("tess scale", 0.02f);
+							const string floorName = vt0.second.get<string>("name");
+							sFloor *floor = AddFloor(date, floorName);
+							if (!floor)
+								throw std::exception();
 
-							sCamera *cam = AddCamera(floor, name, pos);
-							if (!cam)
-								continue;
+							floor->keymapFileName = vt0.second.get<string>(
+								"keymap filename", "filename.jpg");
 
-							cam->pc3dFileName = fileName3d;
-							cam->pcTextureFileName = textureFileName;
-							cam->keymapPos = kpos;
-							cam->tessScale = tessScale;
-
-							ptree::assoc_iterator itor3 = vt1.second.find("point cloud");
-							if (vt1.second.not_found() != itor3)
+							ptree::assoc_iterator itor3 = vt0.second.find("pins");
+							if (props.not_found() != itor3)
 							{
-								ptree &child_field2 = vt1.second.get_child("point cloud");
-								for (ptree::value_type &vt : child_field2)
+								ptree &child_field2 = vt0.second.get_child("pins");
+								for (ptree::value_type &vt1 : child_field2)
 								{
-									sPCData pc;
-									pc.name = vt.second.get<string>("name");
+									const string name = vt1.second.get<string>("name");
+									const string fileName3d = vt1.second.get<string>("point cloud 3d filename", "");
+									const string textureFileName = vt1.second.get<string>("point cloud texture filename", "");
+									const string posStr = vt1.second.get<string>("pos");
+									const Vector3 pos = ParseVector3(posStr);
+									const string keymapPosStr = vt1.second.get<string>("keymap pos");
+									const Vector2 kpos = ParseVector2(keymapPosStr);
+									const float tessScale = vt1.second.get<float>("tess scale", 0.02f);
 
-									const string posStr = vt.second.get<string>("pos");
-									pc.pos = ParseVector3(posStr);
+									sPin *pin = AddPin(floor, name, pos);
+									if (!pin)
+										continue;
 
-									const string wndPosStr = vt.second.get<string>("wndpos", "");
-									pc.wndPos = ParseVector3(wndPosStr);
-									if (pc.wndPos.IsEmpty())
-										pc.wndPos = pc.pos;
+									pin->pc3dFileName = fileName3d;
+									pin->pcTextureFileName = textureFileName;
+									pin->keymapPos = kpos;
+									pin->tessScale = tessScale;
 
-									const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
-									pc.wndSize = ParseVector3(wndSizeStr);
+									ptree::assoc_iterator itor4 = vt1.second.find("point cloud");
+									if (vt1.second.not_found() != itor4)
+									{
+										ptree &child_field3 = vt1.second.get_child("point cloud");
+										for (ptree::value_type &vt : child_field3)
+										{
+											sPCData pc;
+											pc.name = vt.second.get<string>("name");
 
-									pc.desc = vt.second.get<string>("description");
+											const string posStr = vt.second.get<string>("pos");
+											pc.pos = ParseVector3(posStr);
 
-									AddData(floor, name, pc);
-								} //~point cloud
-							}
-						} //~camras
-					} // find camras
-				}//~floors
-			}//find floors
+											const string wndPosStr = vt.second.get<string>("wndpos", "");
+											pc.wndPos = ParseVector3(wndPosStr);
+											if (pc.wndPos.IsEmpty())
+												pc.wndPos = pc.pos;
+
+											const string wndSizeStr = vt.second.get<string>("wndsize", "100 100 0");
+											pc.wndSize = ParseVector3(wndSizeStr);
+
+											pc.desc = vt.second.get<string>("description");
+
+											AddData(floor, name, pc);
+										} //~point cloud
+									}//find point cloud
+								} //~pins
+							} // find pins
+						}//~floors
+					}//find floors
+				} //~dates
+			}//~find dates
 		} //~project
 	}
 	catch (std::exception &e)
@@ -170,58 +188,68 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 		proj.put("name", m_project.name.c_str());
 		proj.put("path", m_project.dir.c_str());
 
-		ptree floors;
-		for (auto &floor : m_project.floors)
+		ptree dates;
+		for (auto &date : m_project.dates)
 		{
-			ptree fl;
-			fl.put("name", floor->name.c_str());
-			fl.put("keymap filename", floor->keymapFileName.c_str());
+			ptree d;
+			d.put("name", date->name.c_str());
 
-			ptree cams;
-			for (auto &cam : floor->cams)
+			ptree floors;
+			for (auto &floor : date->floors)
 			{
-				ptree c;
-				c.put("name", cam->name.c_str());
-				c.put("point cloud 3d filename", cam->pc3dFileName.c_str());
-				c.put("point cloud texture filename", cam->pcTextureFileName.c_str());
-				common::Str128 text;
-				text.Format("%f %f %f", cam->pos.x, cam->pos.y, cam->pos.z);
-				c.put("pos", text.c_str());
-				text.Format("%f %f", cam->keymapPos.x, cam->keymapPos.y);
-				c.put("keymap pos", text.c_str());
-				c.put("tess scale", cam->tessScale);
+				ptree fl;
+				fl.put("name", floor->name.c_str());
+				fl.put("keymap filename", floor->keymapFileName.c_str());
 
-				ptree pcs;
-				for (auto &pc : cam->pcds)
+				ptree pins;
+				for (auto &pin : floor->pins)
 				{
-					ptree z;
-					z.put("name", pc->name.c_str());
-
+					ptree c;
+					c.put("name", pin->name.c_str());
+					c.put("point cloud 3d filename", pin->pc3dFileName.c_str());
+					c.put("point cloud texture filename", pin->pcTextureFileName.c_str());
 					common::Str128 text;
-					text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
-					z.put("pos", text.c_str());
+					text.Format("%f %f %f", pin->pos.x, pin->pos.y, pin->pos.z);
+					c.put("pos", text.c_str());
+					text.Format("%f %f", pin->keymapPos.x, pin->keymapPos.y);
+					c.put("keymap pos", text.c_str());
+					c.put("tess scale", pin->tessScale);
 
-					if (pc->wndPos.IsEmpty())
-						pc->wndPos = pc->pos;
-					text.Format("%f %f %f", pc->wndPos.x, pc->wndPos.y, pc->wndPos.z);
-					z.put("wndpos", text.c_str());
+					ptree pcs;
+					for (auto &pc : pin->pcds)
+					{
+						ptree z;
+						z.put("name", pc->name.c_str());
 
-					text.Format("%f %f %f", pc->wndSize.x, pc->wndSize.y, pc->wndSize.z);
-					z.put("wndsize", text.c_str());
+						common::Str128 text;
+						text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
+						z.put("pos", text.c_str());
 
-					z.put("description", pc->desc.c_str());
+						if (pc->wndPos.IsEmpty())
+							pc->wndPos = pc->pos;
+						text.Format("%f %f %f", pc->wndPos.x, pc->wndPos.y, pc->wndPos.z);
+						z.put("wndpos", text.c_str());
 
-					pcs.push_back(std::make_pair("", z));
-				}
-				c.add_child("point cloud", pcs);
-				cams.push_back(std::make_pair("", c));
-			}//~cams
+						text.Format("%f %f %f", pc->wndSize.x, pc->wndSize.y, pc->wndSize.z);
+						z.put("wndsize", text.c_str());
 
-			fl.add_child("cameras", cams);
-			floors.push_back(std::make_pair("", fl));
-		}//~floors
+						z.put("description", pc->desc.c_str());
 
-		proj.add_child("floors", floors);
+						pcs.push_back(std::make_pair("", z));
+					}
+					c.add_child("point cloud", pcs);
+					pins.push_back(std::make_pair("", c));
+				}//~pins
+
+				fl.add_child("pins", pins);
+				floors.push_back(std::make_pair("", fl));
+			}//~floors
+
+			d.add_child("floors", floors);
+			dates.push_back(std::make_pair("", d));
+		}//~dates
+
+		proj.add_child("dates", dates);
 		props.add_child("project", proj);
 
 		boost::property_tree::write_json(fileName.c_str(), props);
@@ -238,103 +266,164 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 }
 
 
-cPointCloudDB::sFloor* cPointCloudDB::AddFloor(const StrId &name)
+cPointCloudDB::sDate* cPointCloudDB::AddDate(const StrId &name)
 {
-	sFloor *floor = FindFloor(name);
+	sDate *date = FindDate(name);
+	if (date)
+		return NULL; // already exist
+
+	date = new sDate;
+	date->name = name.c_str();
+	m_project.dates.push_back(date);
+	return date;
+}
+
+
+bool cPointCloudDB::RemoveDate(const StrId &name)
+{
+	sDate *date = FindDate(name);
+	if (!date)
+		return false; // not exist
+
+	common::removevector(m_project.dates, date);
+
+	// remove all point cloud
+	while (!date->floors.empty())
+	{
+		sFloor *floor = date->floors.back();
+		RemoveFloor(date, floor->name);
+	}
+	date->floors.clear();
+	delete date;
+	return true;
+}
+
+
+cPointCloudDB::sDate* cPointCloudDB::FindDate(const StrId &name)
+{
+	for (auto &date : m_project.dates)
+		if (date->name == name)
+			return date;
+	return NULL;
+}
+
+
+cPointCloudDB::sFloor* cPointCloudDB::AddFloor(sDate* date, const StrId &name)
+{
+	sFloor *floor = FindFloor(date, name);
 	if (floor)
 		return NULL; // already exist
 
 	floor = new sFloor;
 	floor->name = name.c_str();
-	m_project.floors.push_back(floor);
+	date->floors.push_back(floor);
 	return floor;
 }
 
 
-bool cPointCloudDB::RemoveFloor(const StrId &name)
+bool cPointCloudDB::RemoveFloor(sDate* date, const StrId &name)
 {
-	sFloor *floor = FindFloor(name);
+	sFloor *floor = FindFloor(date, name);
 	if (!floor)
 		return false; // not exist
 
-	common::removevector(m_project.floors, floor);
+	common::removevector(date->floors, floor);
 
 	// remove all point cloud
-	for (auto &cam : floor->cams)
+	for (auto &pin : floor->pins)
 	{
-		for (auto &pc : cam->pcds)
+		for (auto &pc : pin->pcds)
 			delete pc;
-		cam->pcds.clear();
-		delete cam;
+		pin->pcds.clear();
+		delete pin;
 	}
-	floor->cams.clear();
+	floor->pins.clear();
 	delete floor;
 	return true;
 }
 
 
-cPointCloudDB::sFloor* cPointCloudDB::FindFloor(const StrId &name)
+cPointCloudDB::sFloor* cPointCloudDB::FindFloor(sDate* date, const StrId &name)
 {
-	for (auto &floor : m_project.floors)
+	for (auto &floor : date->floors)
 		if (floor->name == name)
 			return floor;
 	return NULL;
 }
 
 
-// add camera, and return camera instance
-cPointCloudDB::sCamera* cPointCloudDB::AddCamera(sFloor *floor
-	, const StrId &name, const Vector3 &pos)
+cPointCloudDB::sFloor* cPointCloudDB::FindFloor(
+	const StrId &dateName, const StrId &floorName)
 {
-	sCamera *cam = FindCamera(floor, name);
-	if (cam)
-		return NULL; // already exist
-
-	cam = new sCamera;
-	cam->name = name.c_str();
-	cam->pos = pos;
-	floor->cams.push_back(cam);
-	return cam;
+	sDate *date = FindDate(dateName);
+	RETV(!date, nullptr);
+	return FindFloor(date, floorName);
 }
 
 
-bool cPointCloudDB::RemoveCamera(sFloor *floor
+// add pin, and return pin instance
+cPointCloudDB::sPin* cPointCloudDB::AddPin(sFloor *floor
+	, const StrId &name, const Vector3 &pos)
+{
+	sPin *pin = FindPin(floor, name);
+	if (pin)
+		return NULL; // already exist
+
+	pin = new sPin;
+	pin->name = name.c_str();
+	pin->pos = pos;
+	floor->pins.push_back(pin);
+	return pin;
+}
+
+
+bool cPointCloudDB::RemovePin(sFloor *floor
 	, const StrId &name)
 {
-	sCamera *cam = FindCamera(floor, name);
-	if (!cam)
+	sPin *pin = FindPin(floor, name);
+	if (!pin)
 		return false; // not exist
 
-	common::removevector(floor->cams, cam);
+	common::removevector(floor->pins, pin);
 
 	// remove all point cloud
-	for (auto &pc : cam->pcds)
+	for (auto &pc : pin->pcds)
 		delete pc;
-	cam->pcds.clear();
+	pin->pcds.clear();
 
-	delete cam;
+	delete pin;
 	return true;
 }
 
 
-cPointCloudDB::sCamera* cPointCloudDB::FindCamera(sFloor *floor
+cPointCloudDB::sPin* cPointCloudDB::FindPin(sFloor *floor
 	, const StrId &name)
 {
-	for (auto &cam : floor->cams)
-		if (cam->name == name)
-			return cam;
+	for (auto &pin : floor->pins)
+		if (pin->name == name)
+			return pin;
 	return NULL;
 }
 
 
+cPointCloudDB::sPin* cPointCloudDB::FindPin(const StrId dateName
+	, const StrId &floorName, const StrId &pinName)
+{
+	sFloor *floor = FindFloor(dateName, floorName);
+	RETV(!floor, nullptr);
+	sPin *pin = FindPin(floor, pinName);
+	return pin;
+}
+
+
 // id: point cloud id
-cPointCloudDB::sCamera* cPointCloudDB::FindCameraByPointId(sFloor *floor
+cPointCloudDB::sPin* cPointCloudDB::FindPinByPointId(sFloor *floor
 	, const int pointId)
 {
-	for (auto &cam : floor->cams)
-		for (auto &pc : cam->pcds)
+	for (auto &pin : floor->pins)
+		for (auto &pc : pin->pcds)
 			if (pc->id == pointId)
-				return cam;
+				return pin;
 	return NULL;
 }
 
@@ -342,36 +431,36 @@ cPointCloudDB::sCamera* cPointCloudDB::FindCameraByPointId(sFloor *floor
 // create and return sPCData
 // generate unique id
 cPointCloudDB::sPCData* cPointCloudDB::CreateData(sFloor *floor
-	, const StrId &cameraName)
+	, const StrId &pinName)
 {
-	sCamera *cam = FindCamera(floor, cameraName);
-	RETV(!cam, NULL); // not exist camera
+	sPin *pin = FindPin(floor, pinName);
+	RETV(!pin, NULL); // not exist Pin
 
 	const int id = common::GenerateId();
 	sPCData *data = new sPCData;
 	data->id = id;
 	data->name = common::format("Memo-%d", id);
 	data->pos = Vector3(0, 0, 0);
-	cam->pcds.push_back(data);
+	pin->pcds.push_back(data);
 	return data;
 }
 
 
 // add point cloud data, return id
 // if fail, return -1
-int cPointCloudDB::AddData(sFloor *floor, const StrId &cameraName, const sPCData &pc)
+int cPointCloudDB::AddData(sFloor *floor, const StrId &pinName, const sPCData &pc)
 {
-	sCamera *cam = FindCamera(floor, cameraName);
-	RETV(!cam, NULL); // not exist camera
+	sPin *pin = FindPin(floor, pinName);
+	RETV(!pin, NULL); // not exist pin
 
-	sPCData *data = FindData(floor, cameraName, pc.pos);
+	sPCData *data = FindData(floor, pinName, pc.pos);
 	if (data)
 		return -1; // already exist
 
 	sPCData *n = new sPCData;
 	*n = pc;
 	n->id = common::GenerateId();
-	cam->pcds.push_back(n);
+	pin->pcds.push_back(n);
 	return n->id;
 }
 
@@ -380,13 +469,13 @@ int cPointCloudDB::AddData(sFloor *floor, const StrId &cameraName, const sPCData
 // if success, return true or false
 bool cPointCloudDB::RemoveData(sFloor *floor, const int pointId)
 {
-	sCamera *cam = FindCameraByPointId(floor, pointId);
-	RETV(!cam, NULL); // not exist camera
+	sPin *pin = FindPinByPointId(floor, pointId);
+	RETV(!pin, NULL); // not exist pin
 
 	sPCData *data = FindData(floor, pointId);
 	RETV(!data, NULL); // not exist point
 
-	common::removevector(cam->pcds, data);
+	common::removevector(pin->pcds, data);
 	delete data;
 	return true;
 }
@@ -394,21 +483,30 @@ bool cPointCloudDB::RemoveData(sFloor *floor, const int pointId)
 
 cPointCloudDB::sPCData* cPointCloudDB::FindData(sFloor *floor, const int pointId)
 {
-	for (auto &cam : floor->cams)
-		for (auto &pc : cam->pcds)
+	for (auto &pin : floor->pins)
+		for (auto &pc : pin->pcds)
 			if (pc->id == pointId)
 				return pc;
 	return NULL;
 }
 
 
-cPointCloudDB::sPCData* cPointCloudDB::FindData(sFloor *floor
-	, const StrId &cameraName, const Vector3 &pos)
+cPointCloudDB::sPCData* cPointCloudDB::FindData(
+	const StrId dateName, const StrId &floorName, const int pointId)
 {
-	sCamera *cam = FindCamera(floor, cameraName);
-	RETV(!cam, NULL); // not exist camera
+	sFloor *floor = FindFloor(dateName, floorName);
+	RETV(!floor, nullptr);
+	return FindData(floor, pointId);
+}
 
-	for (auto &pc : cam->pcds)
+
+cPointCloudDB::sPCData* cPointCloudDB::FindData(sFloor *floor
+	, const StrId &pinName, const Vector3 &pos)
+{
+	sPin *pin = FindPin(floor, pinName);
+	RETV(!pin, NULL); // not exist pin
+
+	for (auto &pc : pin->pcds)
 		if (pc->pos.IsEqual(pos, 0.01f))
 			return pc;
 	return NULL;
@@ -452,35 +550,52 @@ bool cPointCloudDB::IsLoad()
 }
 
 
+cPointCloudDB& cPointCloudDB::operator=(const cPointCloudDB &rhs)
+{
+	if (this != &rhs)
+	{
+		Clear();
+		CopyProjectData(rhs.m_project, m_project);
+	}
+	return *this;
+}
+
 // deep copy project data structure
 // src -> dst
 bool cPointCloudDB::CopyProjectData(const sProject &src, sProject &dst)
 {
 	dst = src;
-	dst.floors.clear(); // remove before copy
+	dst.dates.clear(); // remove before copy
 
-	for (auto &floor : src.floors)
+	for (auto &date : src.dates)
 	{
-		sFloor *f = new sFloor;
-		*f = *floor;
-		f->cams.clear();// remove before copy
+		sDate *d = new sDate;
+		*d = *date;
+		d->floors.clear();//remove before copy
 
-		for (auto &cam : floor->cams)
+		for (auto &floor : date->floors)
 		{
-			sCamera *c = new sCamera;
-			*c = *cam;
-			c->pcds.clear(); // remove before copy
+			sFloor *f = new sFloor;
+			*f = *floor;
+			f->pins.clear();// remove before copy
 
-			for (auto &pc : cam->pcds)
+			for (auto &pin : floor->pins)
 			{
-				sPCData *p = new sPCData;
-				*p = *pc;
-				c->pcds.push_back(p);
-			}
-			f->cams.push_back(c);			
-		}
+				sPin *c = new sPin;
+				*c = *pin;
+				c->pcds.clear(); // remove before copy
 
-		dst.floors.push_back(f);
+				for (auto &pc : pin->pcds)
+				{
+					sPCData *p = new sPCData;
+					*p = *pc;
+					c->pcds.push_back(p);
+				}
+				f->pins.push_back(c);
+			}
+			d->floors.push_back(f);
+		}
+		dst.dates.push_back(d);
 	}
 
 	return true;
@@ -490,35 +605,40 @@ bool cPointCloudDB::CopyProjectData(const sProject &src, sProject &dst)
 // remove project data
 bool cPointCloudDB::RemoveProjectData(sProject &proj)
 {
-	for (auto &floor : proj.floors)
+	for (auto &date : proj.dates)
 	{
-		for (auto &cam : floor->cams)
+		for (auto &floor : date->floors)
 		{
-			for (auto &pc : cam->pcds)
-				delete pc;
-			delete cam;
+			for (auto &pin : floor->pins)
+			{
+				for (auto &pc : pin->pcds)
+					delete pc;
+				delete pin;
+			}
+			floor->pins.clear();
+			delete floor;
 		}
-		floor->cams.clear();
+		delete date;
 	}
 	proj = {};
 	return true;
 }
 
 
-bool cPointCloudDB::RemoveFloor(sFloor *floor)
-{
-	// remove all point cloud
-	for (auto &cam : floor->cams)
-	{
-		for (auto &pc : cam->pcds)
-			delete pc;
-		cam->pcds.clear();
-		delete cam;
-	}
-	floor->cams.clear();
-	delete floor;
-	return true;
-}
+//bool cPointCloudDB::RemoveDate(sFloor *floor)
+//{
+//	// remove all point cloud
+//	for (auto &pin : floor->pins)
+//	{
+//		for (auto &pc : pin->pcds)
+//			delete pc;
+//		pin->pcds.clear();
+//		delete pin;
+//	}
+//	floor->pins.clear();
+//	delete floor;
+//	return true;
+//}
 
 
 void cPointCloudDB::Clear()

@@ -45,7 +45,7 @@ public:
 	graphic::cRenderTarget m_renderTarget;
 	graphic::cTexture *m_pinImg;
 
-	cPointCloudDB::sCamera *m_curCameraInfo; // current select camera
+	cPointCloudDB::sPin *m_curPinInfo; // current select camera
 
 	Vector3 m_pickPos;
 	Vector3 m_pointCloudPos;

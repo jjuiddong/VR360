@@ -18,7 +18,7 @@ bool cGlobal::Init()
 {
 	//m_pcDb.Read("pointcloud_data.json");
 
-	m_currentCameraName = "camera1";
+	m_cPinStr = "camera1";
 
 	return true;
 }
@@ -35,7 +35,7 @@ bool cGlobal::ReadProjectFile(const StrPath &fileName)
 	//	= graphic::cResourceManager::Get()->LoadTexture(
 	//		m_3dView->GetRenderer(), m_pcDb.m_project.keymapFileName);
 
-	m_3dView->m_curCameraInfo = nullptr;
+	m_3dView->m_curPinInfo = nullptr;
 
 	return true;
 }

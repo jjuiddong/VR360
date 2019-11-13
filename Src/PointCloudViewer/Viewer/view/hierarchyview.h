@@ -18,7 +18,10 @@ public:
 
 protected:
 	bool RenderNewProjectDlg();
-	bool RenderEditCameraDlg();
+	bool RenderEditPinDlg();
+	bool RenderDateEdit();
+	bool RenderFloorEdit();
+	bool RenderPinEdit();
 	bool RenderHierarchy(common::sFolderNode *node);
 	bool RenderHierarchy2(common::sFolderNode *node);
 	bool UpdateDirectoryHierarchy(const StrPath &searchPath);
@@ -32,9 +35,11 @@ public:
 
 	// project creation variable
 	graphic::cTexture *m_keymapTexture; // keymap texture
+	cPointCloudDB m_editPc; // edit point cloud
+	cPointCloudDB m_tempPc; // copy editPc
+	cPointCloudDB::sDate *m_selDate;
 	cPointCloudDB::sFloor *m_selFloor;
-	cPointCloudDB::sCamera *m_selCam;
-	cPointCloudDB::sProject m_editProj;
+	cPointCloudDB::sPin *m_selPin;
 	string m_selFileStr;
 	graphic::cTexture *m_pinImg;
 };

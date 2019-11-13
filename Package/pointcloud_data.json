@@ -2,88 +2,217 @@
     "project": {
         "name": "Project Name",
         "path": "D:\\pcd\\",
-        "floors": [
+        "dates": [
             {
-                "name": "1F",
-                "keymap filename": "D:\\pcd\\minimap.jpg",
-                "cameras": [
+                "name": "2019-09-12",
+                "floors": [
                     {
-                        "name": "Pin1",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.267000 0.280000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
+                        "name": "1F",
+                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin1",
+                                "point cloud 3d filename": "D:\\pcd\\2019-09-12\\1F\\test_1.obj",
+                                "point cloud texture filename": "D:\\pcd\\2019-09-12\\1F\\1.bmp",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.272000 0.268000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": [
+                                    {
+                                        "name": "P - problem",
+                                        "pos": "0.239531 1.371421 -1.948073",
+                                        "wndpos": "0.537562 1.346009 -1.748445",
+                                        "wndsize": "274.000000 123.000000 0.000000",
+                                        "description": "P - problem\n\n"
+                                    },
+                                    {
+                                        "name": "T problem",
+                                        "pos": "-0.829804 1.308270 -2.001075",
+                                        "wndpos": "-1.089395 1.237332 -1.734347",
+                                        "wndsize": "233.000000 120.000000 0.000000",
+                                        "description": "T problem\n"
+                                    },
+                                    {
+                                        "name": "Wall Crack",
+                                        "pos": "4.459685 1.972773 -0.117382",
+                                        "wndpos": "4.108611 1.811952 0.082428",
+                                        "wndsize": "200.000000 150.000000 0.000000",
+                                        "description": "Wall Crack\n"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Pin2",
+                                "point cloud 3d filename": "D:\\pcd\\2019-09-12\\1F\\test_2.obj",
+                                "point cloud texture filename": "D:\\pcd\\2019-09-12\\1F\\2.bmp",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.665000 0.272000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": [
+                                    {
+                                        "name": "Door Problem",
+                                        "pos": "-7.812660 -1.236601 -0.916185",
+                                        "wndpos": "-7.206175 -0.987717 0.276401",
+                                        "wndsize": "200.000000 150.000000 0.000000",
+                                        "description": "Door Problem\n"
+                                    },
+                                    {
+                                        "name": "짐이 너무 많다.",
+                                        "pos": "-7.434169 -0.719842 -1.635975",
+                                        "wndpos": "-6.745111 -0.544572 -1.719501",
+                                        "wndsize": "200.000000 150.000000 0.000000",
+                                        "description": "짐이 너무 많다.\n"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Pin3",
+                                "point cloud 3d filename": "D:\\pcd\\2019-09-12\\1F\\test_3.obj",
+                                "point cloud texture filename": "D:\\pcd\\2019-09-12\\1F\\3.bmp",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.665000 0.657000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            }
+                        ]
                     },
                     {
-                        "name": "Pin2",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
-                    },
-                    {
-                        "name": "Pin3",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
-                    },
-                    {
-                        "name": "Pin4",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
-                    },
-                    {
-                        "name": "Pin5",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
+                        "name": "2F",
+                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "-431602080.000000 -431602080.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            }
+                        ]
                     }
                 ]
             },
             {
-                "name": "2F-2",
-                "keymap filename": "D:\\pcd\\minimap.jpg",
-                "cameras": [
+                "name": "2019-10-12",
+                "floors": [
                     {
-                        "name": "Pin10",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
+                        "name": "1F",
+                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin21",
+                                "point cloud 3d filename": "D:\\pcd\\2019-10-12\\SamplePly.obj",
+                                "point cloud texture filename": "D:\\pcd\\2019-10-12\\MeshImg.JPG",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.279000 0.277000",
+                                "tess scale": "3",
+                                "point cloud": [
+                                    {
+                                        "name": "AirControl System Problem",
+                                        "pos": "-1493.698364 -2658.476318 -451.281036",
+                                        "wndpos": "-1289.991455 -2383.160889 -594.881653",
+                                        "wndsize": "227.000000 146.000000 0.000000",
+                                        "description": "AirControl System Problem\n"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Pin22",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            },
+                            {
+                                "name": "Pin23",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            }
+                        ]
                     },
                     {
-                        "name": "Pin11",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
+                        "name": "2F",
+                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin24",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "2019-11-12",
+                "floors": [
+                    {
+                        "name": "1F",
+                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin31",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            },
+                            {
+                                "name": "Pin32",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            },
+                            {
+                                "name": "Pin33",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            }
+                        ]
                     },
                     {
-                        "name": "Pin12",
-                        "point cloud 3d filename": "",
-                        "point cloud texture filename": "",
-                        "pos": "0.000000 0.000000 0.000000",
-                        "keymap pos": "0.000000 0.000000",
-                        "tess scale": "0.0199999996",
-                        "point cloud": ""
+                        "name": "2F",
+                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin321",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            },
+                            {
+                                "name": "Pin322",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.000000 0.000000",
+                                "tess scale": "0.0199999996",
+                                "point cloud": ""
+                            }
+                        ]
                     }
                 ]
             }

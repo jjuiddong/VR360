@@ -25,7 +25,7 @@ public:
 	cInfoView *m_infoView;
 	cHierarchyView *m_hierarchyView;
 	cPointCloudDB m_pcDb;
-	string m_currentDateName;
-	string m_currentFloorName;
-	string m_currentCameraName;
+	string m_cDateStr; // current date Name
+	string m_cFloorStr; // current Floor Name
+	string m_cPinStr; // current Pin Name
 };

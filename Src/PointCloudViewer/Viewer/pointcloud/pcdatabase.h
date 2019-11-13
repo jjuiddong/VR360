@@ -6,15 +6,18 @@
 //		- project
 //			- project name
 //			- directory path
-//			- floor[]
-//				- keymap filename
-//				- camera[]
-//					- camera name
-//					- camera pos
-//					- point[]
-//						- name
-//						- pos
-//						- description
+//			- dates[]
+//				- name (YYYY-MM-DD)
+//				- floors[]
+//					- floor name
+//					- keymap filename
+//					- pins[]
+//						- pin name
+//						- pin pos
+//						- point[]
+//							- name
+//							- pos
+//							- description
 //
 #pragma once
 
@@ -33,7 +36,7 @@ public:
 		common::Str256 desc; // description
 	};
 
-	struct sCamera
+	struct sPin
 	{
 		StrId name; // unique name
 		StrPath pc3dFileName; // point cloud 3d data file name
@@ -49,38 +52,56 @@ public:
 	{
 		StrId name;
 		StrPath keymapFileName; // keymap filename
-		vector<sCamera*> cams;
+		vector<sPin*> pins;
+	};
+
+	struct sDate
+	{
+		StrId name; // date string (YYYY-MM-DD)
+		vector<sFloor*> floors;
 	};
 
 	struct sProject
 	{
 		StrId name; // project name
 		StrPath dir; // project directory
-		vector<sFloor*> floors;
+		vector<sDate*> dates;
 	};
 
 	cPointCloudDB();
+	cPointCloudDB(const cPointCloudDB &rhs);
 	virtual ~cPointCloudDB();
 
 	bool Read(const StrPath &fileName);
 	bool Write(const StrPath &fileName);
-	sFloor* AddFloor(const StrId &name);
-	bool RemoveFloor(const StrId &name);
-	sFloor* FindFloor(const StrId &name);
-	sCamera* AddCamera(sFloor *floor, const StrId &name, const Vector3 &pos);
-	bool RemoveCamera(sFloor *floor, const StrId &name);
-	sCamera* FindCamera(sFloor *floor, const StrId &name);
-	sCamera* FindCameraByPointId(sFloor *floor, const int pointId);
 
-	sPCData* CreateData(sFloor *floor, const StrId &cameraName);
-	int AddData(sFloor *floor, const StrId &cameraName, const sPCData &pc);
+	sDate* AddDate(const StrId &name);
+	bool RemoveDate(const StrId &name);
+	sDate* FindDate(const StrId &name);
+
+	sFloor* AddFloor(sDate* date, const StrId &name);
+	bool RemoveFloor(sDate* date, const StrId &name);
+	sFloor* FindFloor(sDate* date, const StrId &name);
+	sFloor* FindFloor(const StrId &dateName, const StrId &floorName);
+
+	sPin* AddPin(sFloor *floor, const StrId &name, const Vector3 &pos);
+	bool RemovePin(sFloor *floor, const StrId &name);
+	sPin* FindPin(sFloor *floor, const StrId &name);
+	sPin* FindPin(const StrId dateName, const StrId &floorName, const StrId &pinName);
+	sPin* FindPinByPointId(sFloor *floor, const int pointId);
+
+	sPCData* CreateData(sFloor *floor, const StrId &pinName);
+	int AddData(sFloor *floor, const StrId &pinName, const sPCData &pc);
 	bool RemoveData(sFloor *floor, const int pointId);
 	sPCData* FindData(sFloor *floor, const int pointId);
-	sPCData* FindData(sFloor *floor, const StrId &cameraName, const Vector3 &pos);
+	sPCData* FindData(const StrId dateName, const StrId &floorName, const int pointId);
+	sPCData* FindData(sFloor *floor, const StrId &pinName, const Vector3 &pos);
+
+	cPointCloudDB& operator=(const cPointCloudDB &rhs);
 
 	static bool CopyProjectData(const sProject &src, sProject &dst);
 	static bool RemoveProjectData(sProject &proj);
-	static bool RemoveFloor(sFloor *floor);
+	//static bool RemoveDate(sDate *date);
 
 	bool IsLoad();
 	void Clear();
