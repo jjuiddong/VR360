@@ -12,6 +12,7 @@ cHierarchyView::cHierarchyView(const StrId &name)
 	, m_projEditMode(eProjectEditMode::None)
 	, m_pinImg(nullptr)
 	, m_hierarchy(nullptr)
+	, m_isOpenNewProj(false)
 {
 }
 
@@ -43,83 +44,14 @@ void cHierarchyView::OnUpdate(const float deltaSeconds)
 
 void cHierarchyView::OnRender(const float deltaSeconds)
 {
-	static bool isOpenNewProj = false;
-	if (ImGui::Button("New Project"))
+	if (ImGui::Button("Project Setting"))
 	{
-		if (!isOpenNewProj)
-		{
-			m_editPc.Clear();
-			m_editPc.m_project.name = "Project Name";
-			m_selDate = nullptr;
-			m_selFloor = nullptr;
-			m_selPin = nullptr;
-
-			// get current document directory path
-			char my_documents[MAX_PATH];
-			const HRESULT result = SHGetFolderPathA(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, my_documents);
-			m_editPc.m_project.dir = (result == S_OK) ? my_documents : "";
-			m_tempPc = m_editPc;
-		}
-		isOpenNewProj = true;
-		m_projEditMode = eProjectEditMode::New;
+		ProjectSetting();
 	}
 
-	if (ImGui::Button("Open Project"))
-	{
-		const StrPath fileName = common::OpenFileDialog(m_owner->getSystemHandle()
-			, { {L"Project File (*.prj)", L"*.prj"}
-				, {L"All File (*.*)", L"*.*"} });
-		if (!fileName.empty())
-		{
-			if (!g_global->ReadProjectFile(fileName))
-			{
-				::MessageBoxA(m_owner->getSystemHandle()
-					, "Error!! Read Project File (Internal Error)", "ERROR"
-					, MB_OK | MB_ICONERROR);
-			}
-		}
-	}
-
-	if (ImGui::Button("Save Project"))
-	{
-		if (g_global->m_pcDb.IsLoad())//null project return
-		{
-			StrPath fileName = common::SaveFileDialog(m_owner->getSystemHandle()
-				, { {L"Project File (*.prj)", L"*.prj"}
-					, {L"All File (*.*)", L"*.*"} });
-			if (!fileName.empty())
-			{
-				if (g_global->m_pcDb.Write(fileName))
-				{
-					::MessageBoxA(m_owner->getSystemHandle()
-						, "Success!! Write Project File", "CONFIRM"
-						, MB_OK | MB_ICONINFORMATION);
-				}
-				else
-				{
-					::MessageBoxA(m_owner->getSystemHandle()
-						, "Error!! Write Project File (Internal Error)", "ERROR"
-						, MB_OK | MB_ICONERROR);
-				}
-			}
-		}
-	}
-
-	if (ImGui::Button("Project Information")) // Modify Button
-	{
-		if (g_global->m_pcDb.IsLoad())//null project return
-		{
-			m_editPc = g_global->m_pcDb;
-			m_tempPc = m_editPc;
-			m_selDate = nullptr;
-			m_selFloor = nullptr;
-			m_selPin = nullptr;
-
-			isOpenNewProj = true;
-			m_projEditMode = eProjectEditMode::Modify;
-		}
-	}
-
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
 	if (ImGui::Button("Refresh"))
 	{
 		if (g_global->m_pcDb.IsLoad())//null project return
@@ -127,18 +59,111 @@ void cHierarchyView::OnRender(const float deltaSeconds)
 			UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
 		}
 	}
+	ImGui::Spacing();
 
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
 	RenderHierarchy2(m_hierarchy);
 
-	if (isOpenNewProj)
+	if (m_isOpenNewProj)
 	{
-		isOpenNewProj = RenderNewProjectDlg();
-		if (!isOpenNewProj)
+		m_isOpenNewProj = RenderNewProjectDlg();
+		if (!m_isOpenNewProj)
 			m_projEditMode = eProjectEditMode::None;
 	}
+}
+
+
+// show new project dialog
+bool cHierarchyView::NewProject()
+{
+	if (m_isOpenNewProj)
+		return true;
+
+	m_editPc.Clear();
+	m_editPc.m_project.name = "Project Name";
+	m_selDate = nullptr;
+	m_selFloor = nullptr;
+	m_selPin = nullptr;
+
+	// get current document directory path
+	char my_documents[MAX_PATH];
+	const HRESULT result = SHGetFolderPathA(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, my_documents);
+	m_editPc.m_project.dir = (result == S_OK) ? my_documents : "";
+	m_tempPc = m_editPc;
+
+	m_isOpenNewProj = true;
+	m_projEditMode = eProjectEditMode::New;
+
+	return true;
+}
+
+
+bool cHierarchyView::OpenProject()
+{
+	const StrPath fileName = common::OpenFileDialog(m_owner->getSystemHandle()
+		, { {L"Project File (*.prj)", L"*.prj"}
+			, {L"All File (*.*)", L"*.*"} });
+	if (!fileName.empty())
+	{
+		if (g_global->ReadProjectFile(fileName))
+		{
+			UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
+		}
+		else
+		{
+			::MessageBoxA(m_owner->getSystemHandle()
+				, "Error!! Read Project File (Internal Error)", "ERROR"
+				, MB_OK | MB_ICONERROR);
+		}
+	}
+
+	return true;
+}
+
+
+bool cHierarchyView::SaveProject()
+{
+	if (g_global->m_pcDb.IsLoad())//null project return
+	{
+		StrPath fileName = common::SaveFileDialog(m_owner->getSystemHandle()
+			, { {L"Project File (*.prj)", L"*.prj"}
+				, {L"All File (*.*)", L"*.*"} });
+		if (!fileName.empty())
+		{
+			if (g_global->m_pcDb.Write(fileName))
+			{
+				::MessageBoxA(m_owner->getSystemHandle()
+					, "Success!! Write Project File", "CONFIRM"
+					, MB_OK | MB_ICONINFORMATION);
+			}
+			else
+			{
+				::MessageBoxA(m_owner->getSystemHandle()
+					, "Error!! Write Project File (Internal Error)", "ERROR"
+					, MB_OK | MB_ICONERROR);
+			}
+		}
+	}
+
+	return true;
+}
+
+
+// show project setting dialog
+bool cHierarchyView::ProjectSetting()
+{
+	if (g_global->m_pcDb.IsLoad())//null project return
+	{
+		m_editPc = g_global->m_pcDb;
+		m_tempPc = m_editPc;
+		m_selDate = nullptr;
+		m_selFloor = nullptr;
+		m_selPin = nullptr;
+
+		m_isOpenNewProj = true;
+		m_projEditMode = eProjectEditMode::Modify;
+	}
+
+	return true;
 }
 
 

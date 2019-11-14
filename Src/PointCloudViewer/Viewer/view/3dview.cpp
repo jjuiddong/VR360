@@ -211,22 +211,18 @@ void c3DView::OnRender(const float deltaSeconds)
 	m_viewPos = { (int)(pos.x), (int)(pos.y) };
 	const common::sRectf viewRect = GetWindowSizeAvailible();
 	ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(viewRect.Width(), viewRect.Height()));
-	//ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(100,100));
 
 	// HUD
 	// Render Menu Window
 	const float MENU_WIDTH = 320.f;
 	const float windowAlpha = 0.0f;
 	bool isOpen = true;
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar 
-		| ImGuiWindowFlags_NoResize 
-		| ImGuiWindowFlags_NoMove 
+	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
 		| ImGuiWindowFlags_NoBackground
-		| ImGuiWindowFlags_NoCollapse;
+		;
 	ImGui::SetNextWindowPos(pos);
-	//ImGui::SetNextWindowBgAlpha(windowAlpha);
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), viewRect.Height()));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 100.f));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -240,14 +236,20 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::SameLine();
 		ImGui::Checkbox("PointCloud2", &m_isShowPointCloud2);
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
+	}
+	ImGui::End();
 
-		// render keymap
-		if (g_global->m_pcDb.IsLoad() 
+	// render keymap
+	ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + viewRect.Height()-200.f));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), 200.f), 200.f));
+	if (ImGui::Begin("keymap window", &isOpen, flags))
+	{
+		if (g_global->m_pcDb.IsLoad()
 			&& m_keyMap.m_texture)
 		{
 			auto *srv = m_keyMap.m_texture->m_texSRV;
 			const Vector2 keymapSize(200, 200); // keymap image size
-			const Vector2 keymapPos(0, viewRect.Height() - keymapSize.y - 20);
+			const Vector2 keymapPos(0, 0);
 
 			ImGui::SetCursorPos(*(ImVec2*)&keymapPos);
 			ImGui::Image(srv, *(ImVec2*)&keymapSize);
@@ -278,7 +280,7 @@ void c3DView::OnRender(const float deltaSeconds)
 						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
 						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
 						ImGui::PushID(pin);
-						if (ImGui::Button(" ", ImVec2(10,10)))
+						if (ImGui::Button(" ", ImVec2(10, 10)))
 							JumpPin(pin->name.c_str());
 						ImGui::PopID();
 						ImGui::PopStyleColor(3);
@@ -295,31 +297,9 @@ void c3DView::OnRender(const float deltaSeconds)
 			}
 			ImGui::SetCursorPos(oldPos); // recovery
 		}
-
-		// minimap jump button
-		//{
-		//	auto &renderer = GetRenderer();
-
-		//	ImGui::SetWindowPos(ImVec2(30, -105));
-		//	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
-		//	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
-		//	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
-		//	if (ImGui::Button("Camera1"))
-		//		JumpCamera("Pin1");
-
-		//	ImGui::SetWindowPos(ImVec2(115, -130));
-		//	if (ImGui::Button("Camera2"))
-		//		JumpCamera("Pin2");
-
-		//	ImGui::SetWindowPos(ImVec2(115, -80));
-		//	if (ImGui::Button("Camera3"))
-		//		JumpCamera("Pin3");
-
-		//	ImGui::PopStyleColor(3);
-		//}
 	}
-	ImGui::PopStyleColor();
 	ImGui::End();
+	ImGui::PopStyleColor();
 
 	if (m_isShowPopupMenu)
 	{

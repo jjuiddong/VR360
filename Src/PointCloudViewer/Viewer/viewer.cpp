@@ -16,6 +16,7 @@ public:
 	virtual bool OnInit() override;
 	virtual void OnUpdate(const float deltaSeconds) override;
 	virtual void OnRender(const float deltaSeconds) override;
+	virtual void OnRenderMenuBar() override;
 	virtual void OnEventProc(const sf::Event &evt) override;
 };
 
@@ -32,6 +33,7 @@ cViewer::cViewer()
 	graphic::cResourceManager::Get()->SetMediaDirectory("./media/");
 
 	m_windowName = L"Point Cloud Viewer";
+	m_isMenuBar = true;
 	m_isLazyMode = true;
 	const RECT r = { 0, 0, 1024, 768 };
 	//const RECT r = { 0, 0, 1280, 960 };
@@ -111,6 +113,39 @@ void cViewer::OnUpdate(const float deltaSeconds)
 
 void cViewer::OnRender(const float deltaSeconds)
 {
+}
+
+
+void cViewer::OnRenderMenuBar() 
+{
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("New", NULL))
+				g_global->m_hierarchyView->NewProject();
+			if (ImGui::MenuItem("Open", NULL))
+				g_global->m_hierarchyView->OpenProject();
+			if (ImGui::MenuItem("Save", NULL))
+				g_global->m_hierarchyView->SaveProject();
+			if (ImGui::MenuItem("Project Setting", NULL))
+				g_global->m_hierarchyView->ProjectSetting();
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Help"))
+		{
+			if (ImGui::MenuItem("About Point Cloud Viewer", NULL))
+			{
+
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMenuBar();
+	}
 }
 
 

@@ -15,6 +15,11 @@ public:
 	virtual void OnUpdate(const float deltaSeconds) override;
 	virtual void OnRender(const float deltaSeconds) override;
 
+	bool NewProject();
+	bool OpenProject();
+	bool SaveProject();
+	bool ProjectSetting();
+
 
 protected:
 	bool RenderNewProjectDlg();
@@ -42,4 +47,5 @@ public:
 	cPointCloudDB::sPin *m_selPin;
 	string m_selFileStr;
 	graphic::cTexture *m_pinImg;
+	bool m_isOpenNewProj;
 };
