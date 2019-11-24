@@ -167,8 +167,8 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		{
 			Transform tfm;
 			tfm.pos = m_pickPos;
-			tfm.scale = Vector3::Ones * 3.01f;
-			//tfm.scale = Vector3::Ones * 0.01f;
+			//tfm.scale = Vector3::Ones * 3.01f;
+			tfm.scale = Vector3::Ones * 0.01f;
 			renderer.m_dbgBox.SetColor(cColor::YELLOW);
 			renderer.m_dbgBox.SetBox(tfm);
 			renderer.m_dbgBox.Render(renderer);
@@ -235,15 +235,15 @@ void c3DView::OnRender(const float deltaSeconds)
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Checkbox("Texture", &m_isShowTexture);
+		ImGui::Checkbox("Equirectangular", &m_isShowTexture);
 		ImGui::SameLine();
 		ImGui::Checkbox("Wireframe", &m_isShowWireframe);
 		ImGui::SameLine();
 		ImGui::Checkbox("GridLine", &m_isShowGridLine);
 		//ImGui::SameLine();
-		ImGui::Checkbox("PointCloud1", &m_isShowPointCloud1);
+		ImGui::Checkbox("PointCloud 3D", &m_isShowPointCloud1);
 		ImGui::SameLine();
-		ImGui::Checkbox("PointCloud2", &m_isShowPointCloud2);
+		ImGui::Checkbox("PCMap", &m_isShowPointCloud2);
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
 	}
 	ImGui::End();
@@ -518,11 +518,15 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 	//}
 	//return nearPos;
 
+	cPointCloudMap *pcMap = g_global->m_pcMap;
+	if (!pcMap)
+		return {};
+
 	Vector3 nearPos;
 	float minLen = FLT_MAX;
-	for (uint i=0; i < m_pcMap.m_pcCount; ++i)
+	for (uint i=0; i < pcMap->m_pcCount; ++i)
 	{
-		const auto &pos = m_pcMap.m_pcd[i];
+		const auto &pos = pcMap->m_pcd[i];
 		if (plane.Distance(pos) < 0.f)
 			continue;
 
@@ -563,32 +567,13 @@ bool c3DView::JumpPin(const string &pinName)
 	{
 		StrPath pcMapFileName = StrPath(pin->pcTextureFileName).GetFileNameExceptExt2();
 		pcMapFileName += ".pcmap";
-		m_pcMap.Read(pcMapFileName, 333 * 2, 200 * 2);
-
-		using namespace graphic;
-		sRawMeshGroup2 *rawMeshes = new sRawMeshGroup2;
-		rawMeshes->name = pcMapFileName.c_str();
-		
-		rawMeshes->meshes.push_back({});
-		sRawMesh2 *mesh = &rawMeshes->meshes.back();
-		mesh->name = "mesh1";
-		mesh->renderFlags = eRenderFlag::VISIBLE | eRenderFlag::NOALPHABLEND;
-		for (int i = 0; i < m_pcMap.m_pcCount; ++i)
+		if (g_global->LoadPCMap(pcMapFileName))
 		{
-			auto &vtx = m_pcMap.m_pcd[m_pcMap.m_pcCount - i - 1];
-			mesh->vertices.push_back(vtx);
+			// load point cloud vertex
+			m_pointCloud.Create(GetRenderer(), common::GenerateId(), pcMapFileName);
 		}
-
-		rawMeshes->nodes.push_back({});
-		sRawNode *node = &rawMeshes->nodes.back();
-		node->name = "node1";
-		node->meshes.push_back(0);
-		node->localTm = Matrix44::Identity;
-
-		cResourceManager::Get()->InsertRawMesh(pcMapFileName, rawMeshes);
-
-		m_pointCloud.Create(GetRenderer(), common::GenerateId(), pcMapFileName);
 	}
+
 
 	m_isUpdatePcWindowPos = true; // use OnRender() function
 	m_curPinInfo = pin;
@@ -716,9 +701,9 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 			m_pointUV = uv;
 			m_pointUVRay = ray;
 			const Vector3 pos = ray.dir * m_pickPosDistance + ray.orig;
-			//m_pickPos = pos;
-			//m_pickPos = m_pcMap.GetPosition(uv);
-			m_pickPos = m_pcMap.GetPosition(Vector2(uv.x, 1.f-uv.y));
+			m_pickPos = pos;
+			//if (g_global->m_pcMap)
+			//	m_pickPos = g_global->m_pcMap->GetPosition(Vector2(uv.x, 1.f-uv.y));
 			//m_pickPos = PickPointCloud(mousePt);
 		}
 	}

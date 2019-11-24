@@ -24,7 +24,7 @@ public:
 protected:
 	Vector3 PickPointCloud(const POINT mousePt);
 	bool JumpPin(const string &pinName);
-
+	
 	void UpdateLookAt(const POINT &mousePt);
 	void OnWheelMove(const float delta, const POINT mousePt);
 	void OnMouseMove(const POINT mousePt);
@@ -46,7 +46,6 @@ public:
 	graphic::cTexture *m_pinImg;
 
 	cPointCloudDB::sPin *m_curPinInfo; // current select camera
-	cPointCloudMap m_pcMap; // point cloud map
 
 	Vector3 m_pickPos;
 	Vector3 m_pointCloudPos;
@@ -72,7 +71,4 @@ public:
 	POINT m_clickPos; // window 2d mouse pos
 	Vector3 m_mousePickPos; // mouse cursor pos in ground picking
 	bool m_mouseDown[3]; // Left, Right, Middle
-	//float m_rotateLen;
-	//common::Plane m_groundPlane1;
-	//common::Plane m_groundPlane2;
 };
