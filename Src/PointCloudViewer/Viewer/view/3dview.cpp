@@ -8,17 +8,20 @@ using namespace framework;
 
 c3DView::c3DView(const string &name)
 	: framework::cDockWindow(name)
-	, m_groundPlane1(Vector3(0, 1, 0), 0)
-	, m_groundPlane2(Vector3(0, -1, 0), 0)
+	//, m_groundPlane1(Vector3(0, 1, 0), 0)
+	//, m_groundPlane2(Vector3(0, -1, 0), 0)
 	, m_isShowWireframe(false)
-	, m_isShowTexture(false)
+	, m_isShowTexture(true)
 	, m_isShowGridLine(false)
-	, m_isShowPointCloud1(true)
-	, m_isShowPointCloud2(true)
+	, m_isShowPointCloud1(false)
+	, m_isShowPointCloud2(false)
 	, m_isShowPopupMenu(false)
+	, m_isBeginPopupMenu(false)
 	, m_isUpdatePcWindowPos(false)
 	, m_curPinInfo(nullptr)
 	, m_pinImg(nullptr)
+	, m_sphereRadius(1000)
+	, m_pickPosDistance(10.f)
 {
 }
 
@@ -54,7 +57,7 @@ bool c3DView::Init(cRenderer &renderer)
 	);
 	m_gridLine.m_transform.pos.y = 0.01f;
 
-	m_sphere.Create(renderer, 1000, 100, 100
+	m_sphere.Create(renderer, m_sphereRadius, 100, 100
 		, graphic::eVertexType::POSITION 
 		//| graphic::eVertexType::NORMAL
 		| graphic::eVertexType::TEXTURE0
@@ -122,19 +125,22 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		CommonStates state(renderer.GetDevice());
 		if (m_isShowWireframe)
 		{
-			renderer.GetDevContext()->RSSetState(state.CullNone());
+			//renderer.GetDevContext()->RSSetState(state.CullNone());
 			renderer.GetDevContext()->RSSetState(state.Wireframe());
 		}
 		else
 		{
-			//renderer.GetDevContext()->RSSetState(state.CullCounterClockwise());
-			renderer.GetDevContext()->RSSetState(state.CullNone());
+			renderer.GetDevContext()->RSSetState(state.CullCounterClockwise());
+			//renderer.GetDevContext()->RSSetState(state.CullNone());
 		}
 
 		if (m_isShowGridLine)
 			m_gridLine.Render(renderer);
 
-		if (m_isShowTexture)
+		if (m_isShowTexture 
+			&& m_sphere.m_texture
+			&& (string(m_sphere.m_texture->m_fileName.GetFileName()) != "white.dds")
+			)
 			m_sphere.Render(renderer);
 
 		const float tessScale = m_curPinInfo ? m_curPinInfo->tessScale : 0.02f;
@@ -142,7 +148,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		if (m_isShowPointCloud1)
 		{
 			Transform tfm;
-			tfm.scale = Vector3(-1, -1, 1);
+			//tfm.scale = Vector3(-1, -1, 1);
 			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
 			m_pointCloud.SetShader(NULL);
 			m_pointCloud.Render(renderer, tfm.GetMatrixXM());
@@ -151,7 +157,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		if (m_isShowPointCloud2)
 		{
 			Transform tfm;
-			tfm.scale = Vector3(-1, -1, 1);
+			//tfm.scale = Vector3(-1, -1, 1);
 			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
 			renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
 			m_pointCloud.SetShader(&m_pointShader);
@@ -161,7 +167,8 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		{
 			Transform tfm;
 			tfm.pos = m_pickPos;
-			tfm.scale = Vector3::Ones * 0.01f;
+			tfm.scale = Vector3::Ones * 3.01f;
+			//tfm.scale = Vector3::Ones * 0.01f;
 			renderer.m_dbgBox.SetColor(cColor::YELLOW);
 			renderer.m_dbgBox.SetBox(tfm);
 			renderer.m_dbgBox.Render(renderer);
@@ -195,11 +202,13 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 		}
 		
-		//renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
-		//m_quad1.Render(renderer);
-		//m_quad2.Render(renderer);
-		//m_quad3.Render(renderer);
-		//m_miniMap.Render(renderer);
+		if (0) // uv zoom image
+		{
+			renderer.m_cbPerFrame.m_v->eyePosW = m_pickUV.GetVectorXM();
+			m_quad1.Render(renderer);
+			m_quad2.Render(renderer);
+			m_quad3.Render(renderer);
+		}
 	}
 	m_renderTarget.End(renderer);
 }
@@ -307,11 +316,13 @@ void c3DView::OnRender(const float deltaSeconds)
 		m_isShowPopupMenu = false;
 	}
 
+	m_isBeginPopupMenu = false;
 	if (ImGui::BeginPopup("PopupMenu"))
 	{
+		m_isBeginPopupMenu = true;
 		if (ImGui::MenuItem("Memo"))
 		{
-			if (!m_pickPos.IsEmpty())
+			if (!m_pointCloudPos.IsEmpty())
 			{
 				cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
 					g_global->m_cDateStr, g_global->m_cFloorStr);
@@ -322,6 +333,8 @@ void c3DView::OnRender(const float deltaSeconds)
 					if (pc)
 					{
 						pc->pos = m_pointCloudPos;
+						pc->epos = m_pointUV;
+
 						// point cloud의 약간 오른쪽에 창을 위치시킨다.
 						pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
 						pc->wndSize = Vector3(200, 150, 0);
@@ -477,32 +490,50 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 	const Line line(ray.dir, ray.orig, 10000.f);
 	const Plane plane(ray.dir, ray.orig);
 	
-	sRawMeshGroup2 *rawMeshes = cResourceManager::Get()->LoadRawMesh(
-		m_pointCloud.m_fileName.c_str());
-	RETV(!rawMeshes, Vector3::Zeroes);
+	//sRawMeshGroup2 *rawMeshes = cResourceManager::Get()->LoadRawMesh(
+	//	m_pointCloud.m_fileName.c_str());
+	//RETV(!rawMeshes, Vector3::Zeroes);
 
-	Transform tfm;
-	tfm.scale = Vector3(-1, -1, 1);
-	Matrix44 tm = tfm.GetMatrix();
+	//Transform tfm;
+	//tfm.scale = Vector3(-1, -1, 1);
+	//Matrix44 tm = tfm.GetMatrix();
+
+	//Vector3 nearPos;
+	//float minLen = FLT_MAX;
+	//for (auto &meshes : rawMeshes->meshes)
+	//{
+	//	for (auto &vtx : meshes.vertices)
+	//	{
+	//		const Vector3 pos = vtx * tm;
+	//		if (plane.Distance(pos) < 0.f)
+	//			continue;
+
+	//		const float dist = line.GetDistance(pos);
+	//		if (minLen > dist)
+	//		{
+	//			minLen = dist;
+	//			nearPos = pos;
+	//		}
+	//	}
+	//}
+	//return nearPos;
 
 	Vector3 nearPos;
 	float minLen = FLT_MAX;
-	for (auto &meshes : rawMeshes->meshes)
+	for (uint i=0; i < m_pcMap.m_pcCount; ++i)
 	{
-		for (auto &vtx : meshes.vertices)
-		{
-			const Vector3 pos = vtx * tm;
-			if (plane.Distance(pos) < 0.f)
-				continue;
+		const auto &pos = m_pcMap.m_pcd[i];
+		if (plane.Distance(pos) < 0.f)
+			continue;
 
-			const float dist = line.GetDistance(pos);
-			if (minLen > dist)
-			{
-				minLen = dist;
-				nearPos = pos;
-			}
+		const float dist = line.GetDistance(pos);
+		if (minLen > dist)
+		{
+			minLen = dist;
+			nearPos = pos;
 		}
 	}
+
 	return nearPos;
 }
 
@@ -519,11 +550,45 @@ bool c3DView::JumpPin(const string &pinName)
 	if (!pin)
 		return false;
 
+	// load equirectangular file
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(GetRenderer()
 		, pin->pcTextureFileName);
 
-	m_pointCloud.Clear();
-	m_pointCloud.Create(GetRenderer(), common::GenerateId(), pin->pc3dFileName);
+	// load 3d point cloud file
+	if (!pin->pc3dFileName.empty())
+		m_pointCloud.Create(GetRenderer(), common::GenerateId(), pin->pc3dFileName);
+
+	// load point cloud map file
+	if (pin->pc3dFileName.empty())
+	{
+		StrPath pcMapFileName = StrPath(pin->pcTextureFileName).GetFileNameExceptExt2();
+		pcMapFileName += ".pcmap";
+		m_pcMap.Read(pcMapFileName, 333 * 2, 200 * 2);
+
+		using namespace graphic;
+		sRawMeshGroup2 *rawMeshes = new sRawMeshGroup2;
+		rawMeshes->name = pcMapFileName.c_str();
+		
+		rawMeshes->meshes.push_back({});
+		sRawMesh2 *mesh = &rawMeshes->meshes.back();
+		mesh->name = "mesh1";
+		mesh->renderFlags = eRenderFlag::VISIBLE | eRenderFlag::NOALPHABLEND;
+		for (int i = 0; i < m_pcMap.m_pcCount; ++i)
+		{
+			auto &vtx = m_pcMap.m_pcd[m_pcMap.m_pcCount - i - 1];
+			mesh->vertices.push_back(vtx);
+		}
+
+		rawMeshes->nodes.push_back({});
+		sRawNode *node = &rawMeshes->nodes.back();
+		node->name = "node1";
+		node->meshes.push_back(0);
+		node->localTm = Matrix44::Identity;
+
+		cResourceManager::Get()->InsertRawMesh(pcMapFileName, rawMeshes);
+
+		m_pointCloud.Create(GetRenderer(), common::GenerateId(), pcMapFileName);
+	}
 
 	m_isUpdatePcWindowPos = true; // use OnRender() function
 	m_curPinInfo = pin;
@@ -536,19 +601,19 @@ void c3DView::UpdateLookAt(const POINT &mousePt)
 {
 	GetMainCamera().MoveCancel();
 
-	const float centerX = GetMainCamera().m_width / 2;
-	const float centerY = GetMainCamera().m_height / 2;
-	const Ray ray = GetMainCamera().GetRay((int)centerX, (int)centerY);
-	const float distance = m_groundPlane1.Collision(ray.dir);
-	if (distance < -0.2f)
-	{
+	//const float centerX = GetMainCamera().m_width / 2;
+	//const float centerY = GetMainCamera().m_height / 2;
+	//const Ray ray = GetMainCamera().GetRay((int)centerX, (int)centerY);
+	//const float distance = m_groundPlane1.Collision(ray.dir);
+	//if (distance < -0.2f)
+	//{
 		//GetMainCamera().m_lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
-	}
-	else
-	{ // horizontal viewing
+	//}
+	//else
+	//{ // horizontal viewing
 		//const Vector3 lookAt = GetMainCamera().m_eyePos + GetMainCamera().GetDirection() * 20.f;
 		//GetMainCamera().m_lookAt = lookAt;
-	}
+	//}
 
 	//GetMainCamera().UpdateViewMatrix();
 }
@@ -560,13 +625,13 @@ void c3DView::OnWheelMove(const float delta, const POINT mousePt)
 {
 	UpdateLookAt(mousePt);
 
-	float len = 0;
-	const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
-	Vector3 lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
-	len = (ray.orig - lookAt).Length();
+	//float len = 0;
+	//const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
+	//Vector3 lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
+	//len = (ray.orig - lookAt).Length();
 
-	const int lv = 10;// m_quadTree.GetLevel(len);
-	const float zoomLen = min(len * 0.1f, (float)(2 << (16 - lv)));
+	//const int lv = 10;// m_quadTree.GetLevel(len);
+	//const float zoomLen = min(len * 0.1f, (float)(2 << (16 - lv)));
 
 	//GetMainCamera().Zoom(ray.dir, (delta < 0) ? -zoomLen : zoomLen);
 }
@@ -603,43 +668,9 @@ void c3DView::OnMouseMove(const POINT mousePt)
 		GetMainCamera().MoveUp(delta.y * len * 0.001f);
 	}
 
-	//
-	float dotH = 0.f;
-	const Vector3 hdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
-	dotH = hdir.DotProduct(Vector3(1, 0, 0));
-
-	float dotV = 0.f;
-	const Vector3 vdir = Vector3(ray.dir.x, 0, ray.dir.z).Normal();
-	dotV = vdir.DotProduct(ray.dir);
-
-	float u = 0.f;
-	{
-		const float angle = acos(dotH) / MATH_PI;
-		if (Vector3(1, 0, 0).CrossProduct(hdir).y > 0)
-		{
-			u = 1.f - (angle * 0.5f);
-		}
-		else
-		{
-			u = (angle * 0.5f);
-		}
-	}
-
-	float v = 0.f;
-	{
-		float angle = acos(dotV) / MATH_PI;
-		if (ray.dir.y > 0)
-		{
-			v = 0.5f - angle;
-		}
-		else
-		{
-			v = abs(angle) + 0.5f;
-		}		
-	}
-
-	m_pickUV = Vector4(u, v, 0, 0);
-	m_uv = Vector2(u, v);
+	const Vector2 uv = m_sphere.GetDirectionUV(ray);
+	m_uv = uv;
+	m_pickUV = uv;
 }
 
 
@@ -654,26 +685,11 @@ void c3DView::OnMouseDown(const sf::Mouse::Button &button, const POINT mousePt)
 	switch (button)
 	{
 	case sf::Mouse::Left:
-	{
 		m_mouseDown[0] = true;
-		const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
-		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
-		m_rotateLen = (p1 - ray.orig).Length();// min(500.f, (p1 - ray.orig).Length());
-
-		m_pickPos = PickPointCloud(mousePt);
-	}
-	break;
-
+		break;
 	case sf::Mouse::Right:
-	{
 		m_mouseDown[1] = true;
-		
-		//const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
-		//Vector3 target = m_groundPlane1.Pick(ray.orig, ray.dir);
-		//const float len = (GetMainCamera().GetEyePos() - target).Length();
-	}
-	break;
-
+		break;
 	case sf::Mouse::Middle:
 		m_mouseDown[2] = true;
 		break;
@@ -690,8 +706,24 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 	switch (button)
 	{
 	case sf::Mouse::Left:
+	{
 		m_mouseDown[0] = false;
-		break;
+
+		if (!m_isBeginPopupMenu)
+		{
+			const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
+			const Vector2 uv = m_sphere.GetDirectionUV(ray);
+			m_pointUV = uv;
+			m_pointUVRay = ray;
+			const Vector3 pos = ray.dir * m_pickPosDistance + ray.orig;
+			//m_pickPos = pos;
+			//m_pickPos = m_pcMap.GetPosition(uv);
+			m_pickPos = m_pcMap.GetPosition(Vector2(uv.x, 1.f-uv.y));
+			//m_pickPos = PickPointCloud(mousePt);
+		}
+	}
+	break;
+
 	case sf::Mouse::Right:
 	{
 		m_mouseDown[1] = false;

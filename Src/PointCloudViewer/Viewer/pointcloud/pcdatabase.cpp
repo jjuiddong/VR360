@@ -141,8 +141,11 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 											sPCData pc;
 											pc.name = vt.second.get<string>("name");
 
-											const string posStr = vt.second.get<string>("pos");
+											const string posStr = vt.second.get<string>("pos", "");
 											pc.pos = ParseVector3(posStr);
+
+											const string eposStr = vt.second.get<string>("epos", "");
+											pc.epos = ParseVector2(eposStr);
 
 											const string wndPosStr = vt.second.get<string>("wndpos", "");
 											pc.wndPos = ParseVector3(wndPosStr);
@@ -224,6 +227,8 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 						common::Str128 text;
 						text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
 						z.put("pos", text.c_str());
+						text.Format("%f %f", pc->epos.x, pc->epos.y);
+						z.put("epos", text.c_str());
 
 						if (pc->wndPos.IsEmpty())
 							pc->wndPos = pc->pos;

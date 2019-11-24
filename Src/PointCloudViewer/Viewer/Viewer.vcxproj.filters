@@ -16,6 +16,9 @@
     <ClCompile Include="view\hierarchyview.cpp">
       <Filter>view</Filter>
     </ClCompile>
+    <ClCompile Include="pointcloud\pcmap.cpp">
+      <Filter>pointcloud</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -31,6 +34,9 @@
     </ClInclude>
     <ClInclude Include="view\hierarchyview.h">
       <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="pointcloud\pcmap.h">
+      <Filter>pointcloud</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

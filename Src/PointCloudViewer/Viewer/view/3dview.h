@@ -33,7 +33,7 @@ protected:
 
 
 public:
-	graphic::cSphere m_sphere;
+	graphic::cSphere2 m_sphere;
 	graphic::cModel m_pointCloud;
 	graphic::cGridLine m_gridLine;
 	graphic::cQuad2D m_quad1;
@@ -46,17 +46,23 @@ public:
 	graphic::cTexture *m_pinImg;
 
 	cPointCloudDB::sPin *m_curPinInfo; // current select camera
+	cPointCloudMap m_pcMap; // point cloud map
 
 	Vector3 m_pickPos;
 	Vector3 m_pointCloudPos;
 	Vector4 m_pickUV;
 	Vector2 m_uv;
+	Vector2 m_pointUV;
+	common::Ray m_pointUVRay;
+	float m_sphereRadius;
+	float m_pickPosDistance;
 	bool m_isShowWireframe;
 	bool m_isShowTexture;
 	bool m_isShowGridLine;
 	bool m_isShowPointCloud1; // point cloud
 	bool m_isShowPointCloud2; // tessellation
 	bool m_isShowPopupMenu;
+	bool m_isBeginPopupMenu;
 	
 	bool m_isUpdatePcWindowPos; // point information 창 위치를 재조정한다.
 
@@ -66,7 +72,7 @@ public:
 	POINT m_clickPos; // window 2d mouse pos
 	Vector3 m_mousePickPos; // mouse cursor pos in ground picking
 	bool m_mouseDown[3]; // Left, Right, Middle
-	float m_rotateLen;
-	common::Plane m_groundPlane1;
-	common::Plane m_groundPlane2;
+	//float m_rotateLen;
+	//common::Plane m_groundPlane1;
+	//common::Plane m_groundPlane2;
 };

@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClCompile Include="global.cpp" />
     <ClCompile Include="pointcloud\pcdatabase.cpp" />
+    <ClCompile Include="pointcloud\pcmap.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -168,6 +169,7 @@
   <ItemGroup>
     <ClInclude Include="global.h" />
     <ClInclude Include="pointcloud\pcdatabase.h" />
+    <ClInclude Include="pointcloud\pcmap.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="view\3dview.h" />
     <ClInclude Include="view\hierarchyview.h" />

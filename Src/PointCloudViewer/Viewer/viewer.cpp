@@ -138,7 +138,16 @@ void cViewer::OnRenderMenuBar()
 		{
 			if (ImGui::MenuItem("About Point Cloud Viewer", NULL))
 			{
+				const char *msg = "이 프로그램의 어떠한 부분도 HYUNDAI E&C와 SEESAW의\n"\
+"    사전 서면 허락없이 복제, 전송, 복사할 수 없으며, \n"\
+"   프로그램의 사용권한은 HYUNDAI E&C 임직원으로\n"\
+"                  제한되어 있습니다.\n\n"\
+"    Copyright 2019. SEESAW All rights reserved.";
 
+				::MessageBoxA(m_hWnd
+					, msg
+					, "CONFIRM"
+					, MB_OK | MB_ICONINFORMATION);
 			}
 
 			ImGui::EndMenu();

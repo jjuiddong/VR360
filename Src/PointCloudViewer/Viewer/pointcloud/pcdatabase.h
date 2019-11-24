@@ -31,6 +31,7 @@ public:
 		int id; // unique id, (auto setting)
 		StrId name;
 		Vector3 pos; // point cloud position
+		Vector2 epos; // equirectangular position (uv coordinate)
 		Vector3 wndPos; // information window poisition (ui)
 		Vector3 wndSize; // information window size (ui) (z not use)
 		common::Str256 desc; // description

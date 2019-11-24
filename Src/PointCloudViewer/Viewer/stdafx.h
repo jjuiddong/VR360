@@ -16,5 +16,6 @@ using common::Vector3;
 using common::Vector4;
 
 #include "pointcloud/pcdatabase.h"
+#include "pointcloud/pcmap.h"
 #include "global.h"
 extern cGlobal *g_global;

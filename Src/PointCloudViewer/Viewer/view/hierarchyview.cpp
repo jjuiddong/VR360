@@ -800,6 +800,7 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 		if (ImGui::Selectable(text.utf8().c_str(), isSelect))
 		{
 			g_global->m_cDateStr = text.c_str();
+			g_global->m_cFloorStr.clear();
 			dateNode = kv.second;
 		}
 		if (isSelect)
@@ -847,6 +848,17 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 				= graphic::cResourceManager::Get()->LoadTexture(
 					g_global->m_3dView->GetRenderer()
 					, floor->keymapFileName);
+		}
+		else
+		{
+			common::Str128 msg;
+			msg.Format("[ %s/%s/ ] 에 해당하는 Point Cloud 데이타를 \n찾지 못했습니다.\n\
+Project Setting에서 Floor Name을 확인하세요."
+				, selDateStr.c_str(), selFloorStr.c_str());
+			::MessageBoxA( m_owner->getSystemHandle()
+				, msg.c_str(), "ERROR"
+				, MB_OK | MB_ICONERROR
+			);
 		}
 	}
 	
