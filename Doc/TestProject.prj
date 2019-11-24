@@ -1,0 +1,62 @@
+{
+    "project": {
+        "name": "TestProject",
+        "path": "D:\\pcd2\\",
+        "dates": [
+            {
+                "name": "2019-11-22",
+                "floors": [
+                    {
+                        "name": "1F",
+                        "keymap filename": "D:\\pcd2\\minimap.jpg",
+                        "pins": [
+                            {
+                                "name": "Pin1",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "D:\\pcd2\\2019-11-22\\1F\\SnapShot.JPG",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.248000 0.277000",
+                                "tess scale": "3",
+                                "point cloud": [
+                                    {
+                                        "name": "전등 문제",
+                                        "pos": "10.737319 1.750747 1.626305",
+                                        "epos": "0.976076 0.449122",
+                                        "wndpos": "9.720711 1.010552 2.136100",
+                                        "wndsize": "200.000000 150.000000 0.000000",
+                                        "description": "전등 문제\n\n전등이 너무 밝다\n"
+                                    },
+                                    {
+                                        "name": "레이다 문제",
+                                        "pos": "10.038326 -0.559309 -4.463090",
+                                        "epos": "0.066584 0.516192",
+                                        "wndpos": "9.503257 0.064522 -3.132898",
+                                        "wndsize": "200.000000 150.000000 0.000000",
+                                        "description": "레이다 문제\n\n레이다 교체 필요.\n\n"
+                                    },
+                                    {
+                                        "name": "모니터 교체",
+                                        "pos": "-9.214278 -0.496739 -5.987515",
+                                        "epos": "0.408288 0.514379",
+                                        "wndpos": "-7.976979 0.251171 -6.033562",
+                                        "wndsize": "200.000000 150.000000 0.000000",
+                                        "description": "모니터 교체\n\n모니터 빠리 교체 하도록\n"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Pin2",
+                                "point cloud 3d filename": "D:\\pcd2\\2019-11-22\\1F\\test.obj",
+                                "point cloud texture filename": "D:\\pcd2\\2019-11-22\\1F\\SnapShot.JPG",
+                                "pos": "0.000000 0.000000 0.000000",
+                                "keymap pos": "0.675000 0.257000",
+                                "tess scale": "3",
+                                "point cloud": ""
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
