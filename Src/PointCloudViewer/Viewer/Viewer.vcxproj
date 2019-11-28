@@ -168,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h" />
+    <ClInclude Include="pointcloud\definition.h" />
     <ClInclude Include="pointcloud\pcdatabase.h" />
     <ClInclude Include="pointcloud\pcmap.h" />
     <ClInclude Include="stdafx.h" />

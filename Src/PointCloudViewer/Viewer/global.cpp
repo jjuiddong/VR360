@@ -18,8 +18,26 @@ cGlobal::~cGlobal()
 bool cGlobal::Init()
 {
 	//m_pcDb.Read("pointcloud_data.json");
-
 	m_cPinStr = "camera1";
+
+	// initialize markup 
+	m_markups.push_back({ eMarkup::Issue, u8"이슈 발생", "이슈 발생", "./media/icon/M1.png" });
+	m_markups.push_back({ eMarkup::Direction, u8"방향 표시", "방향 표시", "./media/icon/M2.png" });
+	m_markups.push_back({ eMarkup::Review, u8"추후 검토", "추후 검토 필요", "./media/icon/M3.png" });
+	m_markups.push_back({ eMarkup::Water, u8"누수, 방수", "누수, 방수", "./media/icon/M4.png" });
+	m_markups.push_back({ eMarkup::ElectricProblem, u8"전력공급 문제", "공사중 전력공급 관련 문제", "./media/icon/M5.png" });
+	m_markups.push_back({ eMarkup::Modify, u8"수정 필요", "수정 필요", "./media/icon/M6.png" });
+	m_markups.push_back({ eMarkup::Contract, u8"기성, 하도", "기성, 하도 관련", "./media/icon/M7.png" });
+	m_markups.push_back({ eMarkup::Prohibit, u8"금지", "금지", "./media/icon/M8.png" });
+	m_markups.push_back({ eMarkup::FinishProcess, u8"마감 공정", "마감 공정", "./media/icon/M9.png" });
+	m_markups.push_back({ eMarkup::PlasterProcess, u8"미장 공정", "미장 공정", "./media/icon/M10.png" });
+	m_markups.push_back({ eMarkup::ElectricProcess, u8"전기 공정", "전기 공정", "./media/icon/M11.png" });
+	m_markups.push_back({ eMarkup::Labor, u8"인력 보충", "인력 보충 등", "./media/icon/M12.png" });
+	m_markups.push_back({ eMarkup::Change, u8"교체 필요", "교체 필요", "./media/icon/M13.png" });
+	m_markups.push_back({ eMarkup::Share, u8"전달 및 공유", "전달 및 공유", "./media/icon/M14.png" });
+	m_markups.push_back({ eMarkup::Cement, u8"시멘트 이슈", "시멘트 관련 이슈", "./media/icon/M15.png" });
+	m_markups.push_back({ eMarkup::SteelFrame, u8"철근 (철골조)", "철근 (철골조)", "./media/icon/M16.png" });
+	m_markups.push_back({ eMarkup::I_Steel, u8"I형 형강, 자재공급", "I형 형강, 자재공급 필요", "./media/icon/M17.png" });
 
 	return true;
 }

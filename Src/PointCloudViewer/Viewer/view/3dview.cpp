@@ -95,8 +95,18 @@ bool c3DView::Init(cRenderer &renderer)
 		| graphic::eVertexType::TEXTURE0
 	);
 
+	m_markup.Create(renderer, graphic::BILLBOARD_TYPE::ALL_AXIS, 1.f, 1.f, Vector3(0, 0, 0));
+
 	m_pinImg = graphic::cResourceManager::Get()->LoadTexture(renderer
 		, "./media/pin.png");
+
+	cBoundingBox bbox(Vector3(0, 0, 0), Vector3(1, 1, 1)*0.2f, Quaternion());
+	m_cube.Create(renderer, bbox
+		, (graphic::eVertexType::POSITION | graphic::eVertexType::COLOR));
+
+	// load markup icon texture file
+	for (auto &markup : g_global->m_markups)
+		markup.icon = cResourceManager::Get()->LoadTexture(renderer, markup.iconFileName.c_str());
 
 	//m_pointCloud.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
 	JumpPin("camera1");
@@ -168,18 +178,19 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			Transform tfm;
 			tfm.pos = m_pickPos;
 			//tfm.scale = Vector3::Ones * 3.01f;
-			tfm.scale = Vector3::Ones * 0.01f;
-			renderer.m_dbgBox.SetColor(cColor::YELLOW);
-			renderer.m_dbgBox.SetBox(tfm);
-			renderer.m_dbgBox.Render(renderer);
+			tfm.scale = Vector3::Ones * 0.03f;
+			m_cube.SetColor(cColor::YELLOW);
+			m_cube.SetCube(tfm);
+			m_cube.Render(renderer);
 		}
+
+		RenderMarkup(renderer);
 
 		// render mouse point
 		const Ray ray = GetMainCamera().GetRay(m_mousePos.x, m_mousePos.y);
 		renderer.m_dbgLine.SetColor(cColor::RED);
 		renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
 		renderer.m_dbgLine.Render(renderer);
-
 
 		// Render Line Point to Information Window
 		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
@@ -238,8 +249,8 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::Checkbox("Equirectangular", &m_isShowTexture);
 		ImGui::SameLine();
 		ImGui::Checkbox("Wireframe", &m_isShowWireframe);
-		ImGui::SameLine();
-		ImGui::Checkbox("GridLine", &m_isShowGridLine);
+		//ImGui::SameLine();
+		//ImGui::Checkbox("GridLine", &m_isShowGridLine);
 		//ImGui::SameLine();
 		ImGui::Checkbox("PointCloud 3D", &m_isShowPointCloud1);
 		ImGui::SameLine();
@@ -247,9 +258,25 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
 	}
 	ImGui::End();
+	ImGui::PopStyleColor();
 
-	// render keymap
-	ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + viewRect.Height()-200.f));
+	RenderKeymap(pos);
+	RenderPopupmenu();
+	RenderPcMemo();
+}
+
+
+// render keymap
+void c3DView::RenderKeymap(const ImVec2 &pos)
+{
+	const common::sRectf viewRect = GetWindowSizeAvailible();
+	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
+		| ImGuiWindowFlags_NoBackground
+		;
+
+	bool isOpen = true;
+	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+	ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + viewRect.Height() - 200.f));
 	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), 200.f), 200.f));
 	if (ImGui::Begin("keymap window", &isOpen, flags))
 	{
@@ -309,6 +336,18 @@ void c3DView::OnRender(const float deltaSeconds)
 	}
 	ImGui::End();
 	ImGui::PopStyleColor();
+}
+
+
+// render popup menu
+void c3DView::RenderPopupmenu()
+{
+	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+		g_global->m_cDateStr, g_global->m_cFloorStr);
+	if (!floor)
+		return;
+	if (m_pointCloudPos.IsEmpty())
+		return;
 
 	if (m_isShowPopupMenu)
 	{
@@ -322,156 +361,200 @@ void c3DView::OnRender(const float deltaSeconds)
 		m_isBeginPopupMenu = true;
 		if (ImGui::MenuItem("Memo"))
 		{
-			if (!m_pointCloudPos.IsEmpty())
+			cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
+				floor, g_global->m_cPinStr);
+			pc->type = cPointCloudDB::sPCData::MEMO;
+			pc->pos = m_pointCloudPos;
+			pc->uvpos = m_pointUV;
+
+			// point cloud의 약간 오른쪽에 창을 위치시킨다.
+			pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
+			pc->wndSize = Vector3(200, 150, 0);
+
+			// point cloud information창 위치를 조정한다.
+			m_isUpdatePcWindowPos = true;
+		}
+
+		if (ImGui::BeginMenu("Mark-up"))
+		{
+			for (auto &markup : g_global->m_markups)
 			{
-				cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-					g_global->m_cDateStr, g_global->m_cFloorStr);
-				if (floor)
+				if (ImGui::MenuItem(markup.name.c_str()))
 				{
+					// add markup
 					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
 						floor, g_global->m_cPinStr);
-					if (pc)
-					{
-						pc->pos = m_pointCloudPos;
-						pc->epos = m_pointUV;
-
-						// point cloud의 약간 오른쪽에 창을 위치시킨다.
-						pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
-						pc->wndSize = Vector3(200, 150, 0);
-
-						// point cloud information창 위치를 조정한다.
-						m_isUpdatePcWindowPos = true;
-					}
-				}//~floor
+					pc->type = cPointCloudDB::sPCData::MARKUP;
+					pc->name = markup.name;
+					pc->markup = markup.type;
+					pc->pos = m_pointCloudPos;
+					pc->uvpos = m_pointUV;
+				}
 			}
+
+			ImGui::EndMenu();
 		}
+
 		ImGui::EndPopup();
 	}
+}
 
+
+// render point cloud memo
+void c3DView::RenderPcMemo()
+{
 	// Render Point Cloud Information Window
 	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
 		g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
-	if (pin)
+	if (!pin)
+		return;
+
+	ImGuiWindowFlags wndFlags = 0;
+	const Ray ray = m_camera.GetRay();
+	const Plane plane(ray.dir, ray.orig);
+	bool isUpdateWindowPos = false;
+	set<int> rmPcs;
+
+	for (auto &pc : pin->pcds)
 	{
-		ImGuiWindowFlags wndFlags = 0;
-		const Ray ray = m_camera.GetRay();
-		const Plane plane(ray.dir, ray.orig);
-		bool isUpdateWindowPos = false;
-		set<int> rmPcs;
+		if (plane.Distance(pc->pos) < 0.f)
+			continue;
+		if (cPointCloudDB::sPCData::MEMO != pc->type)
+			continue;
 
-		for (auto &pc : pin->pcds)
+		if (m_isUpdatePcWindowPos || m_mouseDown[1])
 		{
-			if (plane.Distance(pc->pos) < 0.f)
-				continue;
+			const Vector2 screenPos = m_camera.GetScreenPos(pc->wndPos);
+			const ImVec2 wndPos(screenPos.x, screenPos.y);
+			ImGui::SetNextWindowPos(wndPos);
+			ImGui::SetNextWindowSize(ImVec2(pc->wndSize.x, pc->wndSize.y));
+		}
 
-			if (m_isUpdatePcWindowPos || m_mouseDown[1])
+		ImGui::PushID(pc);
+		bool isOpen = true;
+		if (ImGui::Begin(pc->name.c_str(), &isOpen, wndFlags))
+		{
+			bool isStoreWndPos = false;
+
+			// 메모 내용의 가장 윗줄을 타이틀 이름으로 설정한다.
+			// 편집 도중에 윈도우 타이틀 이름을 바꾸면 포커스를 잃기 때문에
+			// 포커스가 바뀔 때 업데이트 한다.
+			static StrId focusWndName;
+			StrId changeTitleWnd;
+			if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
 			{
-				const Vector2 screenPos = m_camera.GetScreenPos(pc->wndPos);
-				const ImVec2 wndPos(screenPos.x, screenPos.y);
-				ImGui::SetNextWindowPos(wndPos);
-				ImGui::SetNextWindowSize(ImVec2(pc->wndSize.x, pc->wndSize.y));
+				if (focusWndName != pc->name)
+				{
+					changeTitleWnd = focusWndName;
+					focusWndName = pc->name;
+				}
+			}
+			else
+			{
+				if (focusWndName == pc->name)
+				{
+					changeTitleWnd = focusWndName;
+					focusWndName.clear();
+				}
 			}
 
-			ImGui::PushID(pc);
-			bool isOpen = true;
-			if (ImGui::Begin(pc->name.c_str(), &isOpen, wndFlags))
+			if (!changeTitleWnd.empty())
 			{
-				bool isStoreWndPos = false;
-
-				// 메모 내용의 가장 윗줄을 타이틀 이름으로 설정한다.
-				// 편집 도중에 윈도우 타이틀 이름을 바꾸면 포커스를 잃기 때문에
-				// 포커스가 바뀔 때 업데이트 한다.
-				static StrId focusWndName;
-				StrId changeTitleWnd;
-				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+				for (auto &p : pin->pcds)
 				{
-					if (focusWndName != pc->name)
+					if (changeTitleWnd == p->name)
 					{
-						changeTitleWnd = focusWndName;
-						focusWndName = pc->name;
-					}
-				}
-				else
-				{
-					if (focusWndName == pc->name)
-					{
-						changeTitleWnd = focusWndName;
-						focusWndName.clear();
-					}
-				}
-
-				if (!changeTitleWnd.empty())
-				{
-					for (auto &p : pin->pcds)
-					{
-						if (changeTitleWnd == p->name)
+						vector<string> toks;
+						common::tokenizer(p->desc.c_str(), "\n", "", toks);
+						if (!toks.empty() && (p->name != toks[0]))
 						{
-							vector<string> toks;
-							common::tokenizer(p->desc.c_str(), "\n", "", toks);
-							if (!toks.empty() && (p->name != toks[0]))
-							{
-								p->name = toks[0];
-								isUpdateWindowPos = true;
-								isStoreWndPos = true;
-								break;
-							}
+							p->name = toks[0];
+							isUpdateWindowPos = true;
+							isStoreWndPos = true;
+							break;
 						}
 					}
 				}
-				//~ change window title name
-
-				const ImVec2 parentWndSize = ImGui::GetWindowSize();
-				const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
-				ImGui::PushID(pc + 1);
-				ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE, wndSize);
-				ImGui::PopID();
-
-				// 창이 마우스로 선택되면, 위치정보를 업데이트 한다.
-				// 창은 사용자가 임의로 위치를 이동할 수 있다.
-				if (isStoreWndPos
-					|| (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered()))
-				{
-					ImVec2 wndPos = ImGui::GetWindowPos();
-					// 2d 좌표를 3d로 좌표로 변환해서 저장한다.
-					const Ray r = m_camera.GetRay((int)wndPos.x, (int)wndPos.y);
-					const float len = r.orig.Distance(pc->pos);
-					Vector3 pos = r.orig + r.dir * len * 0.9f;
-					pc->wndPos = pos;
-				}
-				else
-				{
-					const ImVec2 wndSize = ImGui::GetWindowSize();
-					pc->wndSize = Vector3(wndSize.x, wndSize.y, 0);
-				}
 			}
+			//~ change window title name
 
-			// close window -> show remove messagebox
-			if (!isOpen)
-			{
-				Str128 msg;
-				msg.Format("Remove Point [ %s ]?", pc->name.c_str());
-				if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-					, msg.c_str(), "CONFIRM", MB_YESNO))
-				{
-					rmPcs.insert(pc->id);
-				}
-			}
-
-			ImGui::End();
+			const ImVec2 parentWndSize = ImGui::GetWindowSize();
+			const ImVec2 wndSize(parentWndSize.x - 20, parentWndSize.y - 50);
+			ImGui::PushID(pc + 1);
+			ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE, wndSize);
 			ImGui::PopID();
-		}
-		m_isUpdatePcWindowPos = isUpdateWindowPos;
 
-		// remove point
-		if (cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-			g_global->m_cDateStr, g_global->m_cFloorStr))
+			// 창이 마우스로 선택되면, 위치정보를 업데이트 한다.
+			// 창은 사용자가 임의로 위치를 이동할 수 있다.
+			if (isStoreWndPos
+				|| (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered()))
+			{
+				ImVec2 wndPos = ImGui::GetWindowPos();
+				// 2d 좌표를 3d로 좌표로 변환해서 저장한다.
+				const Ray r = m_camera.GetRay((int)wndPos.x, (int)wndPos.y);
+				const float len = r.orig.Distance(pc->pos);
+				Vector3 pos = r.orig + r.dir * len * 0.9f;
+				pc->wndPos = pos;
+			}
+			else
+			{
+				const ImVec2 wndSize = ImGui::GetWindowSize();
+				pc->wndSize = Vector3(wndSize.x, wndSize.y, 0);
+			}
+		}
+
+		// close window -> show remove messagebox
+		if (!isOpen)
 		{
-			for (auto &id : rmPcs)
-				g_global->m_pcDb.RemoveData(floor, id);
+			Str128 msg;
+			msg.Format("Remove Point [ %s ]?", pc->name.c_str());
+			if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+				, msg.c_str(), "CONFIRM", MB_YESNO))
+			{
+				rmPcs.insert(pc->id);
+			}
 		}
 
-	}//~pin
+		ImGui::End();
+		ImGui::PopID();
+	}
+	m_isUpdatePcWindowPos = isUpdateWindowPos;
 
+	// remove point
+	if (cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+		g_global->m_cDateStr, g_global->m_cFloorStr))
+	{
+		for (auto &id : rmPcs)
+			g_global->m_pcDb.RemoveData(floor, id);
+	}
+}
+
+
+// render markup icon in 3d space
+void c3DView::RenderMarkup(graphic::cRenderer &renderer)
+{
+	// Render Point Cloud Information Window
+	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
+		g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
+	if (!pin)
+		return;
+
+	const Ray ray = m_camera.GetRay();
+	const Plane plane(ray.dir, ray.orig);
+	for (auto &pc : pin->pcds)
+	{
+		if (plane.Distance(pc->pos) < 0.f)
+			continue;
+		if (cPointCloudDB::sPCData::MARKUP != pc->type)
+			continue;
+
+		Transform tfm;
+		tfm.pos = pc->pos;
+		tfm.scale = Vector3::Ones * 0.1f;
+		m_markup.m_transform = tfm;
+		m_markup.m_texture = g_global->m_markups[pc->markup].icon;
+		m_markup.Render(renderer);
+	}
 }
 
 

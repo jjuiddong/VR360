@@ -14,9 +14,14 @@
 //					- pins[]
 //						- pin name
 //						- pin pos
-//						- point[]
+//						- points[]
+//							- type
 //							- name
+//							- markup id
 //							- pos
+//							- epos
+//							- wndpos
+//							- wndsize
 //							- description
 //
 #pragma once
@@ -26,12 +31,15 @@
 class cPointCloudDB
 {
 public:
-	struct sPCData // point cloud data
+	struct sPCData // point data
 	{
+		enum TYPE {MEMO, MARKUP};
+		TYPE type;
 		int id; // unique id, (auto setting)
+		eMarkup::Enum markup;
 		StrId name;
 		Vector3 pos; // point cloud position
-		Vector2 epos; // equirectangular position (uv coordinate)
+		Vector2 uvpos; // equirectangular position (uv coordinate)
 		Vector3 wndPos; // information window poisition (ui)
 		Vector3 wndSize; // information window size (ui) (z not use)
 		common::Str256 desc; // description

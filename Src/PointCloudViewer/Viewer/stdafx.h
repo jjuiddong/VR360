@@ -15,6 +15,8 @@ using common::Vector2;
 using common::Vector3;
 using common::Vector4;
 
+
+#include "pointcloud/definition.h"
 #include "pointcloud/pcdatabase.h"
 #include "pointcloud/pcmap.h"
 #include "global.h"

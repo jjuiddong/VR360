@@ -38,6 +38,9 @@
     <ClInclude Include="pointcloud\pcmap.h">
       <Filter>pointcloud</Filter>
     </ClInclude>
+    <ClInclude Include="pointcloud\definition.h">
+      <Filter>pointcloud</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="view">

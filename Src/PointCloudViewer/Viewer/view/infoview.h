@@ -14,4 +14,9 @@ public:
 	bool Init();
 	virtual void OnUpdate(const float deltaSeconds) override;
 	virtual void OnRender(const float deltaSeconds) override;
+
+
+protected:
+	void RenderMarkupList();
+	void RenderPinHierarchy();
 };

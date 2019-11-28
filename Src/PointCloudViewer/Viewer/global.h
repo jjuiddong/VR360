@@ -30,6 +30,7 @@ public:
 	cPointCloudDB m_pcDb;
 	cPointCloudMap *m_pcMap;
 	map<string, cPointCloudMap*> m_maps;
+	vector<sMarkup> m_markups;
 
 	string m_cDateStr; // current date Name
 	string m_cFloorStr; // current Floor Name

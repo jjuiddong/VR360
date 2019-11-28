@@ -22,6 +22,10 @@ public:
 
 
 protected:
+	void RenderKeymap(const ImVec2 &pos);
+	void RenderPopupmenu();
+	void RenderPcMemo();
+	void RenderMarkup(graphic::cRenderer &renderer);
 	Vector3 PickPointCloud(const POINT mousePt);
 	bool JumpPin(const string &pinName);
 	
@@ -36,14 +40,16 @@ public:
 	graphic::cSphere2 m_sphere;
 	graphic::cModel m_pointCloud;
 	graphic::cGridLine m_gridLine;
+	graphic::cCube m_cube;
 	graphic::cQuad2D m_quad1;
 	graphic::cQuad2D m_quad2;
 	graphic::cQuad2D m_quad3;
 	graphic::cQuad2D m_keyMap;
 	graphic::cShader11 m_shader;
 	graphic::cShader11 m_pointShader;
-	graphic::cRenderTarget m_renderTarget;
 	graphic::cTexture *m_pinImg;
+	graphic::cBillboard m_markup;
+	graphic::cRenderTarget m_renderTarget;
 
 	cPointCloudDB::sPin *m_curPinInfo; // current select camera
 

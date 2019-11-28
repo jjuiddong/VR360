@@ -43,7 +43,7 @@ cPointCloudDB::~cPointCloudDB()
 //						"tess scale" : 1.f,
 //						"point cloud 3d filename" : "",
 //						"point cloud texture filename" : "",
-//						"point cloud" : [
+//						"points" : [
 //							{
 //								"name" : "name 1",
 //								"pos" : "1 2 3",
@@ -132,20 +132,23 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 									pin->keymapPos = kpos;
 									pin->tessScale = tessScale;
 
-									ptree::assoc_iterator itor4 = vt1.second.find("point cloud");
+									ptree::assoc_iterator itor4 = vt1.second.find("points");
 									if (vt1.second.not_found() != itor4)
 									{
-										ptree &child_field3 = vt1.second.get_child("point cloud");
+										ptree &child_field3 = vt1.second.get_child("points");
 										for (ptree::value_type &vt : child_field3)
 										{
 											sPCData pc;
 											pc.name = vt.second.get<string>("name");
+											const string type = vt.second.get<string>("type");
+											pc.type = (type == "MEMO") ? sPCData::MEMO : sPCData::MARKUP;
+											pc.markup = eMarkup::FromString(vt.second.get<string>("markup"));
 
 											const string posStr = vt.second.get<string>("pos", "");
 											pc.pos = ParseVector3(posStr);
 
-											const string eposStr = vt.second.get<string>("epos", "");
-											pc.epos = ParseVector2(eposStr);
+											const string uvposStr = vt.second.get<string>("uvpos", "");
+											pc.uvpos = ParseVector2(uvposStr);
 
 											const string wndPosStr = vt.second.get<string>("wndpos", "");
 											pc.wndPos = ParseVector3(wndPosStr);
@@ -158,8 +161,8 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 											pc.desc = vt.second.get<string>("description");
 
 											AddData(floor, name, pc);
-										} //~point cloud
-									}//find point cloud
+										} //~points
+									}//find points
 								} //~pins
 							} // find pins
 						}//~floors
@@ -222,13 +225,16 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 					for (auto &pc : pin->pcds)
 					{
 						ptree z;
+
+						z.put("type", (pc->type == sPCData::MEMO) ? "MEMO" : "MARKUP");
 						z.put("name", pc->name.c_str());
+						z.put("markup", eMarkup::ToString(pc->markup));
 
 						common::Str128 text;
 						text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);
 						z.put("pos", text.c_str());
-						text.Format("%f %f", pc->epos.x, pc->epos.y);
-						z.put("epos", text.c_str());
+						text.Format("%f %f", pc->uvpos.x, pc->uvpos.y);
+						z.put("uvpos", text.c_str());
 
 						if (pc->wndPos.IsEmpty())
 							pc->wndPos = pc->pos;
@@ -242,7 +248,7 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 
 						pcs.push_back(std::make_pair("", z));
 					}
-					c.add_child("point cloud", pcs);
+					c.add_child("points", pcs);
 					pins.push_back(std::make_pair("", c));
 				}//~pins
 
@@ -445,6 +451,8 @@ cPointCloudDB::sPCData* cPointCloudDB::CreateData(sFloor *floor
 	sPCData *data = new sPCData;
 	data->id = id;
 	data->name = common::format("Memo-%d", id);
+	data->type = sPCData::MEMO; //default
+	data->markup = eMarkup::None;
 	data->pos = Vector3(0, 0, 0);
 	pin->pcds.push_back(data);
 	return data;
