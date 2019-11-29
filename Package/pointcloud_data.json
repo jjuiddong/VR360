@@ -1,216 +1,243 @@
 {
     "project": {
-        "name": "Project Name",
-        "path": "D:\\pcd\\",
+        "name": "Project3",
+        "path": "D:\\pcd2\\",
         "dates": [
             {
-                "name": "2019-09-12",
+                "name": "2019-11-22",
                 "floors": [
                     {
                         "name": "1F",
-                        "keymap filename": "D:\\pcd\\minimap.jpg",
+                        "keymap filename": "D:\\pcd2\\minimap.jpg",
                         "pins": [
                             {
                                 "name": "Pin1",
-                                "point cloud 3d filename": "D:\\pcd\\2019-09-12\\1F\\test_1.obj",
-                                "point cloud texture filename": "D:\\pcd\\2019-09-12\\1F\\1.bmp",
+                                "point cloud 3d filename": "",
+                                "point cloud texture filename": "D:\\pcd2\\2019-11-22\\1F\\SnapShot.JPG",
                                 "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.272000 0.268000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": [
+                                "keymap pos": "0.266000 0.280000",
+                                "tess scale": "3",
+                                "points": [
                                     {
-                                        "name": "P - problem",
-                                        "pos": "0.239531 1.371421 -1.948073",
-                                        "wndpos": "0.537562 1.346009 -1.748445",
-                                        "wndsize": "274.000000 123.000000 0.000000",
-                                        "description": "P - problem\n\n"
+                                        "type": "MEMO",
+                                        "name": "전등 밝기",
+                                        "markup": "None",
+                                        "pos": "10.716290 1.778128 1.731879",
+                                        "uvpos": "0.974499 0.448319",
+                                        "wndpos": "9.723393 0.850966 2.197241",
+                                        "wndsize": "247.000000 138.000000 0.000000",
+                                        "description": "전등 밝기\n\n전등이 너무 밝다.\n밝기 조절.\n\n"
                                     },
                                     {
-                                        "name": "T problem",
-                                        "pos": "-0.829804 1.308270 -2.001075",
-                                        "wndpos": "-1.089395 1.237332 -1.734347",
-                                        "wndsize": "233.000000 120.000000 0.000000",
-                                        "description": "T problem\n"
+                                        "type": "MEMO",
+                                        "name": "레이더 문제",
+                                        "markup": "None",
+                                        "pos": "10.122292 -0.587136 -4.265497",
+                                        "uvpos": "0.063473 0.516998",
+                                        "wndpos": "9.532696 -0.258104 -3.025118",
+                                        "wndsize": "252.000000 133.000000 0.000000",
+                                        "description": "레이더 문제\n\n레이더가 너무 오래됨.\n교체.\n"
                                     },
                                     {
-                                        "name": "Wall Crack",
-                                        "pos": "4.459685 1.972773 -0.117382",
-                                        "wndpos": "4.108611 1.811952 0.082428",
-                                        "wndsize": "200.000000 150.000000 0.000000",
-                                        "description": "Wall Crack\n"
+                                        "type": "MEMO",
+                                        "name": "의자 문제",
+                                        "markup": "None",
+                                        "pos": "-9.915582 -0.947208 -4.667338",
+                                        "uvpos": "0.429981 0.527444",
+                                        "wndpos": "-8.737552 -0.448606 -4.849197",
+                                        "wndsize": "247.000000 150.000000 0.000000",
+                                        "description": "의자 문제\n\n의자가 너무 오래됨.\n빠른 교채 필요.\n\n"
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "방향 표시",
+                                        "markup": "Direction",
+                                        "pos": "6.401091 0.228829 -8.942800",
+                                        "uvpos": "0.151127 0.493378",
+                                        "wndpos": "6.401091 0.228829 -8.942800",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "추후 검토",
+                                        "markup": "Review",
+                                        "pos": "6.012680 0.194372 -9.209229",
+                                        "uvpos": "0.157943 0.494376",
+                                        "wndpos": "6.012680 0.194372 -9.209229",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "누수, 방수",
+                                        "markup": "Water",
+                                        "pos": "5.685049 0.160033 -9.415657",
+                                        "uvpos": "0.163547 0.495368",
+                                        "wndpos": "5.685049 0.160033 -9.415657",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "전력공급 문제",
+                                        "markup": "ElectricProblem",
+                                        "pos": "5.399477 0.139270 -9.582601",
+                                        "uvpos": "0.168334 0.495971",
+                                        "wndpos": "5.399477 0.139270 -9.582601",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "수정 필요",
+                                        "markup": "Modify",
+                                        "pos": "5.083265 0.191397 -9.753141",
+                                        "uvpos": "0.173533 0.494461",
+                                        "wndpos": "5.083265 0.191397 -9.753141",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "기성, 하도",
+                                        "markup": "Contract",
+                                        "pos": "4.736938 0.124156 -9.927033",
+                                        "uvpos": "0.179141 0.496407",
+                                        "wndpos": "4.736938 0.124156 -9.927033",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "금지",
+                                        "markup": "Prohibit",
+                                        "pos": "4.392544 0.134364 -10.084022",
+                                        "uvpos": "0.184618 0.496113",
+                                        "wndpos": "4.392544 0.134364 -10.084022",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "마감 공정",
+                                        "markup": "FinishProcess",
+                                        "pos": "4.019742 0.145754 -10.238185",
+                                        "uvpos": "0.190455 0.495782",
+                                        "wndpos": "4.019742 0.145754 -10.238185",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "미장 공정",
+                                        "markup": "PlasterProcess",
+                                        "pos": "3.735335 0.163522 -10.345073",
+                                        "uvpos": "0.194852 0.495268",
+                                        "wndpos": "3.735335 0.163522 -10.345073",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "전기 공정",
+                                        "markup": "ElectricProcess",
+                                        "pos": "3.481787 0.187325 -10.432740",
+                                        "uvpos": "0.198734 0.494579",
+                                        "wndpos": "3.481787 0.187325 -10.432740",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "전기 공정",
+                                        "markup": "ElectricProcess",
+                                        "pos": "3.147555 0.191194 -10.538328",
+                                        "uvpos": "0.203806 0.494468",
+                                        "wndpos": "3.147555 0.191194 -10.538328",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "교체 필요",
+                                        "markup": "Change",
+                                        "pos": "2.845879 0.182685 -10.623917",
+                                        "uvpos": "0.208344 0.494714",
+                                        "wndpos": "2.845879 0.182685 -10.623917",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "인력 보충",
+                                        "markup": "Labor",
+                                        "pos": "3.172230 0.016472 -10.532649",
+                                        "uvpos": "0.203441 0.499521",
+                                        "wndpos": "3.172230 0.016472 -10.532649",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "전달 및 공유",
+                                        "markup": "Share",
+                                        "pos": "2.523554 0.210458 -10.704549",
+                                        "uvpos": "0.213153 0.493910",
+                                        "wndpos": "2.523554 0.210458 -10.704549",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "시멘트 이슈",
+                                        "markup": "Cement",
+                                        "pos": "2.078395 0.206028 -10.799898",
+                                        "uvpos": "0.219741 0.494037",
+                                        "wndpos": "2.078395 0.206028 -10.799898",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "철근 (철골조)",
+                                        "markup": "SteelFrame",
+                                        "pos": "1.778713 0.236362 -10.852664",
+                                        "uvpos": "0.224145 0.493160",
+                                        "wndpos": "1.778713 0.236362 -10.852664",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "I형 형강, 자재공급",
+                                        "markup": "I_Steel",
+                                        "pos": "1.314218 0.276113 -10.917719",
+                                        "uvpos": "0.230933 0.492008",
+                                        "wndpos": "1.314218 0.276113 -10.917719",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
+                                    },
+                                    {
+                                        "type": "MARKUP",
+                                        "name": "이슈 발생",
+                                        "markup": "Issue",
+                                        "pos": "6.731191 0.180735 -8.698184",
+                                        "uvpos": "0.145181 0.494769",
+                                        "wndpos": "6.731191 0.180735 -8.698184",
+                                        "wndsize": "0.000000 0.000000 0.000000",
+                                        "description": ""
                                     }
                                 ]
                             },
                             {
                                 "name": "Pin2",
-                                "point cloud 3d filename": "D:\\pcd\\2019-09-12\\1F\\test_2.obj",
-                                "point cloud texture filename": "D:\\pcd\\2019-09-12\\1F\\2.bmp",
+                                "point cloud 3d filename": "D:\\pcd2\\2019-11-22\\1F\\test.obj",
+                                "point cloud texture filename": "D:\\pcd2\\2019-11-22\\1F\\SnapShot.JPG",
                                 "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.665000 0.272000",
+                                "keymap pos": "0.685000 0.270000",
                                 "tess scale": "0.0199999996",
-                                "point cloud": [
-                                    {
-                                        "name": "Door Problem",
-                                        "pos": "-7.812660 -1.236601 -0.916185",
-                                        "wndpos": "-7.206175 -0.987717 0.276401",
-                                        "wndsize": "200.000000 150.000000 0.000000",
-                                        "description": "Door Problem\n"
-                                    },
-                                    {
-                                        "name": "짐이 너무 많다.",
-                                        "pos": "-7.434169 -0.719842 -1.635975",
-                                        "wndpos": "-6.745111 -0.544572 -1.719501",
-                                        "wndsize": "200.000000 150.000000 0.000000",
-                                        "description": "짐이 너무 많다.\n"
-                                    }
-                                ]
-                            },
-                            {
-                                "name": "Pin3",
-                                "point cloud 3d filename": "D:\\pcd\\2019-09-12\\1F\\test_3.obj",
-                                "point cloud texture filename": "D:\\pcd\\2019-09-12\\1F\\3.bmp",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.665000 0.657000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            }
-                        ]
-                    },
-                    {
-                        "name": "2F",
-                        "keymap filename": "D:\\pcd\\minimap.jpg",
-                        "pins": [
-                            {
-                                "name": "Pin",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "-431602080.000000 -431602080.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "name": "2019-10-12",
-                "floors": [
-                    {
-                        "name": "1F",
-                        "keymap filename": "D:\\pcd\\minimap.jpg",
-                        "pins": [
-                            {
-                                "name": "Pin21",
-                                "point cloud 3d filename": "D:\\pcd\\2019-10-12\\SamplePly.obj",
-                                "point cloud texture filename": "D:\\pcd\\2019-10-12\\MeshImg.JPG",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.279000 0.277000",
-                                "tess scale": "3",
-                                "point cloud": [
-                                    {
-                                        "name": "AirControl System Problem",
-                                        "pos": "-1493.698364 -2658.476318 -451.281036",
-                                        "wndpos": "-1289.991455 -2383.160889 -594.881653",
-                                        "wndsize": "227.000000 146.000000 0.000000",
-                                        "description": "AirControl System Problem\n"
-                                    }
-                                ]
-                            },
-                            {
-                                "name": "Pin22",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            },
-                            {
-                                "name": "Pin23",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            }
-                        ]
-                    },
-                    {
-                        "name": "2F",
-                        "keymap filename": "D:\\pcd\\minimap.jpg",
-                        "pins": [
-                            {
-                                "name": "Pin24",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "name": "2019-11-12",
-                "floors": [
-                    {
-                        "name": "1F",
-                        "keymap filename": "D:\\pcd\\minimap.jpg",
-                        "pins": [
-                            {
-                                "name": "Pin31",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            },
-                            {
-                                "name": "Pin32",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            },
-                            {
-                                "name": "Pin33",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            }
-                        ]
-                    },
-                    {
-                        "name": "2F",
-                        "keymap filename": "D:\\pcd\\minimap.jpg",
-                        "pins": [
-                            {
-                                "name": "Pin321",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
-                            },
-                            {
-                                "name": "Pin322",
-                                "point cloud 3d filename": "",
-                                "point cloud texture filename": "",
-                                "pos": "0.000000 0.000000 0.000000",
-                                "keymap pos": "0.000000 0.000000",
-                                "tess scale": "0.0199999996",
-                                "point cloud": ""
+                                "points": ""
                             }
                         ]
                     }

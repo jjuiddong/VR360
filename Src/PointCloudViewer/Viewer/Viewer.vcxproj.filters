@@ -41,6 +41,7 @@
     <ClInclude Include="pointcloud\definition.h">
       <Filter>pointcloud</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="view">
@@ -49,5 +50,23 @@
     <Filter Include="pointcloud">
       <UniqueIdentifier>{f142de3b-4f14-42e2-8fe1-68a5cd9a41fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource">
+      <UniqueIdentifier>{44e2c273-55c8-4634-a679-28adee4be56b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cursor1.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
+    <Image Include="..\..\..\Package\media\변경(PC아이콘).png">
+      <Filter>Resource</Filter>
+    </Image>
+    <Image Include="icon2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Viewer.rc">
+      <Filter>Resource</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

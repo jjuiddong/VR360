@@ -171,6 +171,7 @@
     <ClInclude Include="pointcloud\definition.h" />
     <ClInclude Include="pointcloud\pcdatabase.h" />
     <ClInclude Include="pointcloud\pcmap.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="view\3dview.h" />
     <ClInclude Include="view\hierarchyview.h" />
@@ -189,6 +190,17 @@
     <ProjectReference Include="..\..\..\..\DirectXTK\DirectXTK_Desktop_2017.vcxproj">
       <Project>{e0b52ae7-e160-4d32-bf3f-910b785e5a8e}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Viewer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cursor1.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\Package\media\변경(PC아이콘).png" />
+    <Image Include="icon1.ico" />
+    <Image Include="icon2.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

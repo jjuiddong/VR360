@@ -21,3 +21,4 @@ using common::Vector4;
 #include "pointcloud/pcmap.h"
 #include "global.h"
 extern cGlobal *g_global;
+extern framework::cGameMain2* g_application;

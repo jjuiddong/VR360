@@ -22,6 +22,9 @@ c3DView::c3DView(const string &name)
 	, m_pinImg(nullptr)
 	, m_sphereRadius(1000)
 	, m_pickPosDistance(10.f)
+	, m_keymapBtnTex(nullptr)
+	, m_keymapBtnSize(40, 20)
+	, m_isShowKeymap(true)
 {
 }
 
@@ -108,8 +111,15 @@ bool c3DView::Init(cRenderer &renderer)
 	for (auto &markup : g_global->m_markups)
 		markup.icon = cResourceManager::Get()->LoadTexture(renderer, markup.iconFileName.c_str());
 
-	//m_pointCloud.Create(renderer, common::GenerateId(), "./media/workobj/test_1.obj");
-	JumpPin("camera1");
+	// 키맵 버튼 생성
+	m_keymapBtnTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/2.png");
+	if (m_keymapBtnTex)
+	{
+		const float r = (float)m_keymapBtnTex->m_imageInfo.Height
+		/ (float)m_keymapBtnTex->m_imageInfo.Width;
+		m_keymapBtnSize.y = r * (float)m_keymapBtnSize.x;
+	}
 
 	return true;
 }
@@ -130,7 +140,9 @@ void c3DView::OnPreRender(const float deltaSeconds)
 	GetMainCamera().Bind(renderer);
 	GetMainLight().Bind(renderer);
 
-	if (m_renderTarget.Begin(renderer))
+	//const Vector4 bgColor(0.90f, 0.90f, 0.90f, 1.00f);
+	const Vector4 bgColor(0.87f, 0.87f, 0.87f, 1.00f);
+	if (m_renderTarget.Begin(renderer, bgColor))
 	{
 		CommonStates state(renderer.GetDevice());
 		if (m_isShowWireframe)
@@ -205,6 +217,8 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			{
 				if (plane.Distance(pc->pos) < 0.f)
 					continue;
+				if (pc->type != cPointCloudDB::sPCData::MEMO)
+					continue;
 
 				renderer.m_dbgLine.SetLine(pc->pos, pc->wndPos, 0.001f);
 				renderer.m_dbgLine.Render(renderer);
@@ -275,17 +289,25 @@ void c3DView::RenderKeymap(const ImVec2 &pos)
 		;
 
 	bool isOpen = true;
+	const float btnH = m_keymapBtnSize.y + 20.f; // keymap button height
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-	ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + viewRect.Height() - 200.f));
-	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), 200.f), 200.f));
+	ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + viewRect.Height() - 200.f - btnH));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), 200.f), 200.f + btnH));
 	if (ImGui::Begin("keymap window", &isOpen, flags))
 	{
+		// keymap toggle button
+		if (ImGui::ImageButton(m_keymapBtnTex->m_texSRV, m_keymapBtnSize))
+		{
+			m_isShowKeymap = !m_isShowKeymap;
+		}
+
 		if (g_global->m_pcDb.IsLoad()
-			&& m_keyMap.m_texture)
+			&& m_keyMap.m_texture
+			&& m_isShowKeymap)
 		{
 			auto *srv = m_keyMap.m_texture->m_texSRV;
 			const Vector2 keymapSize(200, 200); // keymap image size
-			const Vector2 keymapPos(0, 0);
+			const Vector2 keymapPos(0, btnH);
 
 			ImGui::SetCursorPos(*(ImVec2*)&keymapPos);
 			ImGui::Image(srv, *(ImVec2*)&keymapSize);
@@ -363,16 +385,19 @@ void c3DView::RenderPopupmenu()
 		{
 			cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
 				floor, g_global->m_cPinStr);
-			pc->type = cPointCloudDB::sPCData::MEMO;
-			pc->pos = m_pointCloudPos;
-			pc->uvpos = m_pointUV;
+			if (pc)
+			{
+				pc->type = cPointCloudDB::sPCData::MEMO;
+				pc->pos = m_pointCloudPos;
+				pc->uvpos = m_pointUV;
 
-			// point cloud의 약간 오른쪽에 창을 위치시킨다.
-			pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
-			pc->wndSize = Vector3(200, 150, 0);
+				// point cloud의 약간 오른쪽에 창을 위치시킨다.
+				pc->wndPos = m_pointCloudPos + m_camera.GetRight() * 0.2f;
+				pc->wndSize = Vector3(200, 150, 0);
 
-			// point cloud information창 위치를 조정한다.
-			m_isUpdatePcWindowPos = true;
+				// point cloud information창 위치를 조정한다.
+				m_isUpdatePcWindowPos = true;
+			}
 		}
 
 		if (ImGui::BeginMenu("Mark-up"))
@@ -384,11 +409,14 @@ void c3DView::RenderPopupmenu()
 					// add markup
 					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
 						floor, g_global->m_cPinStr);
-					pc->type = cPointCloudDB::sPCData::MARKUP;
-					pc->name = markup.name;
-					pc->markup = markup.type;
-					pc->pos = m_pointCloudPos;
-					pc->uvpos = m_pointUV;
+					if (pc)
+					{
+						pc->type = cPointCloudDB::sPCData::MARKUP;
+						pc->name = markup.name;
+						pc->markup = markup.type;
+						pc->pos = m_pointCloudPos;
+						pc->uvpos = m_pointUV;
+					}
 				}
 			}
 
@@ -629,6 +657,11 @@ bool c3DView::JumpPin(const string &pinName)
 {
 	g_global->m_cPinStr = pinName;
 
+	// update window title name
+	g_application->m_title.Format("[%s]-[%s]-[%s]-[%s]"
+		, g_global->m_pcDb.m_project.name.c_str()
+		, g_global->m_cDateStr.c_str(), g_global->m_cFloorStr.c_str(), pinName.c_str());
+
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
 		g_global->m_cDateStr, g_global->m_cFloorStr);
 	if (!floor)
@@ -855,15 +888,19 @@ void c3DView::OnEventProc(const sf::Event &evt)
 		GetCursorPos(&curPos); // sf::event mouse position has noise so we use GetCursorPos() function
 		ScreenToClient(m_owner->getSystemHandle(), &curPos);
 		const POINT pos = { curPos.x - m_viewPos.x, curPos.y - m_viewPos.y };
+		const sRectf viewRect = GetWindowSizeAvailible(true);
+
 		if (sf::Event::MouseButtonPressed == evt.type)
 		{
-			const common::sRectf viewRect = GetWindowSizeAvailible(true);
 			if (viewRect.IsIn((float)curPos.x, (float)curPos.y))
 				OnMouseDown(evt.mouseButton.button, pos);
 		}
 		else
 		{
-			OnMouseUp(evt.mouseButton.button, pos);
+			// 화면밖에 마우스가 있더라도 Capture 상태일 경우 Up 이벤트는 받게한다.
+			if (viewRect.IsIn((float)curPos.x, (float)curPos.y)
+				|| (this == GetCapture()))
+				OnMouseUp(evt.mouseButton.button, pos);
 		}
 	}
 	break;

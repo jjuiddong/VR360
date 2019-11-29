@@ -13,6 +13,8 @@ cHierarchyView::cHierarchyView(const StrId &name)
 	, m_pinImg(nullptr)
 	, m_hierarchy(nullptr)
 	, m_isOpenNewProj(false)
+	, m_folderTex(nullptr)
+	, m_folderIconSize(50,15)
 {
 }
 
@@ -32,6 +34,16 @@ bool cHierarchyView::Init(graphic::cRenderer &renderer)
 {
 	m_pinImg = graphic::cResourceManager::Get()->LoadTexture(renderer
 		, "./media/pin.png");
+
+	// 폴더 아이콘 생성
+	m_folderTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/4.png");
+	if (m_folderTex)
+	{
+		const float r = (float)m_folderTex->m_imageInfo.Width
+			/ (float)m_folderTex->m_imageInfo.Height;
+		m_folderIconSize.x = r * 20.f;
+	}
 
 	return true;
 }
@@ -107,6 +119,9 @@ bool cHierarchyView::OpenProject()
 		if (g_global->ReadProjectFile(fileName))
 		{
 			UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
+
+			g_application->m_title.Format("[%s]"
+				, g_global->m_pcDb.m_project.name.c_str());
 		}
 		else
 		{
@@ -180,12 +195,12 @@ bool cHierarchyView::RenderNewProjectDlg()
 		;
 
 	// change background color (default window too transparent)
-	const ImVec4 tc = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-	Vector4 tc2(tc.x, tc.y, tc.z, tc.w);
-	Vector4 tc3 = tc2 * 1.4f;
-	tc3.w = 0.98f;
-	ImVec4 bgCol = *(ImVec4*)&tc3;
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, bgCol);
+	//const ImVec4 tc = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+	//Vector4 tc2(tc.x, tc.y, tc.z, tc.w);
+	//Vector4 tc3 = tc2 * 1.4f;
+	//tc3.w = 0.98f;
+	//ImVec4 bgCol = *(ImVec4*)&tc3;
+	//ImGui::PushStyleColor(ImGuiCol_WindowBg, bgCol);
 
 	const sf::Vector2u psize = m_owner->getSize();
 	const ImVec2 size(500, 250);
@@ -342,7 +357,7 @@ bool cHierarchyView::RenderNewProjectDlg()
 		isOpenEditLink = RenderEditPinDlg();
 	}
 
-	ImGui::PopStyleColor();
+	//ImGui::PopStyleColor();
 
 	return open;
 }
@@ -795,12 +810,18 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 	// date list
 	for (auto &kv : node->children)
 	{
+		ImGui::Image(m_folderTex->m_texSRV, m_folderIconSize);
+		
 		common::Str128 text = kv.first;
 		const bool isSelect = common::Str128(selDateStr) == text;
+		ImGui::SameLine();
 		if (ImGui::Selectable(text.utf8().c_str(), isSelect))
 		{
 			g_global->m_cDateStr = text.c_str();
 			g_global->m_cFloorStr.clear();
+			//g_application->m_title = text.c_str();
+			g_application->m_title.Format("[%s]-[%s]"
+				, g_global->m_pcDb.m_project.name.c_str(), text.c_str());
 			dateNode = kv.second;
 		}
 		if (isSelect)
@@ -821,10 +842,13 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 	{
 		common::Str128 text = kv.first;
 		const bool isSelect = common::Str128(selFloorStr) == text;
-		ImGui::Indent(20);
+		ImGui::Indent(45);
 		if (ImGui::Selectable(text.utf8().c_str(), isSelect))
 		{
 			g_global->m_cFloorStr = text.c_str();
+			g_application->m_title.Format("[%s]-[%s]-[%s]"
+				, g_global->m_pcDb.m_project.name.c_str()
+				, g_global->m_cDateStr.c_str(), text.c_str());
 			floorNode = kv.second;
 			isFloorClicked = true;
 		}

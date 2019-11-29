@@ -50,6 +50,8 @@ public:
 	graphic::cTexture *m_pinImg;
 	graphic::cBillboard m_markup;
 	graphic::cRenderTarget m_renderTarget;
+	graphic::cTexture *m_keymapBtnTex;
+	ImVec2 m_keymapBtnSize;
 
 	cPointCloudDB::sPin *m_curPinInfo; // current select camera
 
@@ -68,6 +70,7 @@ public:
 	bool m_isShowPointCloud2; // tessellation
 	bool m_isShowPopupMenu;
 	bool m_isBeginPopupMenu;
+	bool m_isShowKeymap;
 	
 	bool m_isUpdatePcWindowPos; // point information 창 위치를 재조정한다.
 

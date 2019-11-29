@@ -1,10 +1,20 @@
 
 #include "stdafx.h"
 #include "infoview.h"
+#include "3dview.h"
 
 
 cInfoView::cInfoView(const StrId &name)
 	: framework::cDockWindow(name)
+	, m_measureTex(nullptr)
+	, m_captureTex(nullptr)
+	, m_markupTex(nullptr)
+	, m_shareTex(nullptr)
+	, m_measureBtnSize(50, 30)
+	, m_captureBtnSize(50, 30)	
+	, m_markupBtnSize(50, 30)
+	, m_shareBtnSize(50, 30)
+	, m_isShowPopupMenu(false)
 {
 }
 
@@ -13,8 +23,48 @@ cInfoView::~cInfoView()
 }
 
 
-bool cInfoView::Init()
+bool cInfoView::Init(graphic::cRenderer &renderer)
 {
+	// 측정 버튼 생성
+	m_measureTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/5.png");
+	if (m_measureTex)
+	{
+		const float r = (float)m_measureTex->m_imageInfo.Height 
+			/ (float)m_measureTex->m_imageInfo.Width;
+		m_measureBtnSize.y = r * 50.f;
+	}
+
+	// 캡쳐 버튼 생성
+	m_captureTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/8.png");
+	if (m_captureTex)
+	{
+		const float r = (float)m_measureTex->m_imageInfo.Height
+			/ (float)m_measureTex->m_imageInfo.Width;
+		m_captureBtnSize.y = r * 50.f;
+	}
+
+	// 마크업 버튼 생성
+	m_markupTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/markupbtn.png");
+	if (m_markupTex)
+	{
+		const float r = (float)m_markupTex->m_imageInfo.Height
+			/ (float)m_markupTex->m_imageInfo.Width;
+		m_markupBtnSize.y = r * 50.f;
+	}
+
+	// 공유 버튼 생성
+	m_shareTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/sharebtn.png");
+	if (m_shareTex)
+	{
+		const float r = (float)m_shareTex->m_imageInfo.Height
+			/ (float)m_shareTex->m_imageInfo.Width;
+		m_shareBtnSize.y = r * 50.f;
+	}
+
 	return true;
 }
 
@@ -26,8 +76,29 @@ void cInfoView::OnUpdate(const float deltaSeconds)
 
 void cInfoView::OnRender(const float deltaSeconds)
 {
-	RenderMarkupList(); // markup btn
+	// capture button
+	if (ImGui::ImageButton(m_captureTex->m_texSRV, m_captureBtnSize))
+	{
+
+	}
+	
+	// measure button
+	ImGui::SameLine();
+	if (ImGui::ImageButton(m_measureTex->m_texSRV, m_measureBtnSize))
+	{
+
+	}
+
+	// share button
+	ImGui::SameLine();
+	if (ImGui::ImageButton(m_shareTex->m_texSRV, m_shareBtnSize))
+	{
+
+	}
+
+	RenderMarkupList();
 	RenderPinHierarchy();
+	RenderPopupmenu();
 }
 
 
@@ -38,9 +109,18 @@ void cInfoView::RenderMarkupList()
 	static const char *prevStr = totalStr;
 	static eMarkup::Enum sortType = eMarkup::None;
 
-	ImGui::Text("Markup List");
-
 	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+	ImGui::Text("Mark-up List");
+	ImGui::Spacing();
+
+	if (ImGui::ImageButton(m_markupTex->m_texSRV, m_markupBtnSize))
+	{
+		g_global->m_3dView->m_pointCloudPos = g_global->m_3dView->m_pickPos;
+		m_isShowPopupMenu = true;
+	}
+
 	ImGui::Text(u8"정렬:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(150);
@@ -73,7 +153,7 @@ void cInfoView::RenderMarkupList()
 		{
 			for (auto &pin : floor->pins)
 			{
-				ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+				//ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
 				ImGui::PushID(pin->name.c_str());
 				if (ImGui::TreeNode(pin->name.c_str()))
 				{
@@ -120,6 +200,58 @@ void cInfoView::RenderMarkupList()
 		for (auto &floor : date->floors)
 			for (auto &id : rmPcs)
 				pcDb.RemoveData(floor, id);
+}
+
+
+// render popup menu
+void cInfoView::RenderPopupmenu()
+{
+	const Vector3 pointCloudPos = g_global->m_3dView->m_pointCloudPos;
+	const Vector2 pointUV = g_global->m_3dView->m_pointUV;
+
+	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+		g_global->m_cDateStr, g_global->m_cFloorStr);
+	if (!floor)
+		return;
+	if (pointCloudPos.IsEmpty())
+		return;
+
+	if (m_isShowPopupMenu)
+	{
+		ImGui::OpenPopup("PopupMenu");
+		m_isShowPopupMenu = false;
+	}
+
+	m_isBeginPopupMenu = false;
+	if (ImGui::BeginPopup("PopupMenu"))
+	{
+		m_isBeginPopupMenu = true;
+
+		if (ImGui::BeginMenu("Mark-up"))
+		{
+			for (auto &markup : g_global->m_markups)
+			{
+				if (ImGui::MenuItem(markup.name.c_str()))
+				{
+					// add markup
+					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
+						floor, g_global->m_cPinStr);
+					if (pc)
+					{
+						pc->type = cPointCloudDB::sPCData::MARKUP;
+						pc->name = markup.name;
+						pc->markup = markup.type;
+						pc->pos = pointCloudPos;
+						pc->uvpos = pointUV;
+					}
+				}
+			}
+
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndPopup();
+	}
 }
 
 

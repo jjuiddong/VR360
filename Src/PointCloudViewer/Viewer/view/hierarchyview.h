@@ -48,4 +48,7 @@ public:
 	string m_selFileStr;
 	graphic::cTexture *m_pinImg;
 	bool m_isOpenNewProj;
+
+	graphic::cTexture *m_folderTex;
+	ImVec2 m_folderIconSize;
 };
