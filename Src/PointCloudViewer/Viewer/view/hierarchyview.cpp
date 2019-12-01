@@ -114,6 +114,7 @@ bool cHierarchyView::OpenProject()
 	const StrPath fileName = common::OpenFileDialog(m_owner->getSystemHandle()
 		, { {L"Project File (*.prj)", L"*.prj"}
 			, {L"All File (*.*)", L"*.*"} });
+
 	if (!fileName.empty())
 	{
 		if (g_global->ReadProjectFile(fileName))

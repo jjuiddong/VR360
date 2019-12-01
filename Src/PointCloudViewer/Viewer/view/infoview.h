@@ -18,6 +18,8 @@ public:
 
 protected:
 	void RenderMarkupList();
+	void RenderMeasure();
+	void RenderCapture();
 	void RenderPopupmenu();
 	void RenderPinHierarchy();
 

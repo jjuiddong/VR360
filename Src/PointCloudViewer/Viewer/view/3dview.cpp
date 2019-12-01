@@ -25,6 +25,7 @@ c3DView::c3DView(const string &name)
 	, m_keymapBtnTex(nullptr)
 	, m_keymapBtnSize(40, 20)
 	, m_isShowKeymap(true)
+	, m_isShowMeasure(true)
 {
 }
 
@@ -147,13 +148,11 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		CommonStates state(renderer.GetDevice());
 		if (m_isShowWireframe)
 		{
-			//renderer.GetDevContext()->RSSetState(state.CullNone());
 			renderer.GetDevContext()->RSSetState(state.Wireframe());
 		}
 		else
 		{
 			renderer.GetDevContext()->RSSetState(state.CullCounterClockwise());
-			//renderer.GetDevContext()->RSSetState(state.CullNone());
 		}
 
 		if (m_isShowGridLine)
@@ -226,6 +225,9 @@ void c3DView::OnPreRender(const float deltaSeconds)
 
 			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 		}
+
+		if (m_isShowMeasure)
+			RenderMeasure(renderer);
 		
 		if (0) // uv zoom image
 		{
@@ -236,6 +238,69 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		}
 	}
 	m_renderTarget.End(renderer);
+
+	if (g_global->m_state == eEditState::Capture)
+	{
+		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
+			g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
+		if (pin) // check load pin
+		{
+			// save capture file to project directory/capture folder
+			// filename = datetime string + date + floor + pin
+			const string dts = common::GetCurrentDateTime();
+			string fileName;
+			fileName = g_global->m_pcDb.m_project.dir.GetFullFileName().c_str();
+			fileName += "\\capture";
+			if (!common::IsFileExist(fileName)) // check capture folder
+				CreateDirectoryA(fileName.c_str(), NULL); // make capture folder
+
+			fileName += string("\\") + dts + " [" + g_global->m_cDateStr + "][" 
+				+ g_global->m_cFloorStr + "][" + g_global->m_cPinStr + "]";
+			fileName += ".jpg";
+
+			if (S_OK == DirectX::SaveWICTextureToFile(renderer.m_devContext
+				, m_renderTarget.m_texture, GUID_ContainerFormatJpeg
+				, common::str2wstr(fileName).c_str()))
+			{
+				StrPath path = fileName;
+				g_global->m_captures.push_back(path.GetFileName());
+			}
+		}
+
+		g_global->m_state = eEditState::VR360;
+	}
+}
+
+
+void c3DView::RenderMeasure(graphic::cRenderer &renderer)
+{
+	RET(g_global->m_measures.empty());
+
+	float totLen = 0.f;
+	for (uint i = 1; i < g_global->m_measures.size(); ++i)
+	{
+		const sMeasurePt &p0 = g_global->m_measures[i - 1];
+		const sMeasurePt &p1 = g_global->m_measures[i];
+
+		renderer.m_dbgLine.SetColor(cColor::RED);
+		renderer.m_dbgLine.SetLine(p0.epos, p1.epos, 0.01f);
+		renderer.m_dbgLine.Render(renderer);
+
+		const float len = p0.rpos.Distance(p1.rpos);
+		totLen += len;
+
+		Transform tfm;
+		tfm.pos = p1.epos + Vector3(0, 0.15f, 0);
+		tfm.scale = Vector3::Ones * 0.1f;
+
+		WStr128 text;
+		text.Format(L"%.1f", totLen);
+		renderer.m_textMgr.AddTextRender(renderer, i, text.c_str()
+			, cColor::WHITE, cColor::BLACK, graphic::BILLBOARD_TYPE::ALL_AXIS
+			, tfm, true
+		);
+
+	}
 }
 
 
@@ -821,6 +886,19 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 			//if (g_global->m_pcMap)
 			//	m_pickPos = g_global->m_pcMap->GetPosition(Vector2(uv.x, 1.f-uv.y));
 			//m_pickPos = PickPointCloud(mousePt);
+
+			if ((eEditState::Measure == g_global->m_state)
+				&& g_global->m_pcMap)
+			{
+				// uv 위치의 point cloud position을 얻는다.
+				const Vector3 pcPos = g_global->m_pcMap->GetPosition(uv);
+				
+				sMeasurePt measure;
+				measure.epos = pos;
+				measure.rpos = pcPos;
+				measure.uv = uv;
+				g_global->m_measures.push_back(measure);
+			}
 		}
 	}
 	break;

@@ -76,27 +76,16 @@ void cInfoView::OnUpdate(const float deltaSeconds)
 
 void cInfoView::OnRender(const float deltaSeconds)
 {
-	// capture button
-	if (ImGui::ImageButton(m_captureTex->m_texSRV, m_captureBtnSize))
-	{
-
-	}
-	
-	// measure button
-	ImGui::SameLine();
-	if (ImGui::ImageButton(m_measureTex->m_texSRV, m_measureBtnSize))
-	{
-
-	}
-
 	// share button
-	ImGui::SameLine();
+	//ImGui::SameLine();
 	if (ImGui::ImageButton(m_shareTex->m_texSRV, m_shareBtnSize))
 	{
 
 	}
 
 	RenderMarkupList();
+	RenderMeasure();
+	RenderCapture();
 	RenderPinHierarchy();
 	RenderPopupmenu();
 }
@@ -109,97 +98,187 @@ void cInfoView::RenderMarkupList()
 	static const char *prevStr = totalStr;
 	static eMarkup::Enum sortType = eMarkup::None;
 
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	ImGui::Text("Mark-up List");
-	ImGui::Spacing();
-
-	if (ImGui::ImageButton(m_markupTex->m_texSRV, m_markupBtnSize))
+	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+	if (ImGui::CollapsingHeader("Mark-up"))
 	{
-		g_global->m_3dView->m_pointCloudPos = g_global->m_3dView->m_pickPos;
-		m_isShowPopupMenu = true;
-	}
+		//ImGui::Spacing();
+		//ImGui::Separator();
+		//ImGui::Spacing();
+		//ImGui::Text("Mark-up List");
+		//ImGui::Spacing();
 
-	ImGui::Text(u8"정렬:");
-	ImGui::SameLine();
-	ImGui::PushItemWidth(150);
-	if (ImGui::BeginCombo("##markup combo", prevStr))
-	{
-		if (ImGui::Selectable(totalStr))
+		if (ImGui::ImageButton(m_markupTex->m_texSRV, m_markupBtnSize))
 		{
-			prevStr = totalStr;
-			sortType = eMarkup::None;
+			g_global->m_3dView->m_pointCloudPos = g_global->m_3dView->m_pickPos;
+			m_isShowPopupMenu = true;
 		}
 
-		for (auto &markup : g_global->m_markups)
+		ImGui::Text(u8"정렬:");
+		ImGui::SameLine();
+		ImGui::PushItemWidth(150);
+		if (ImGui::BeginCombo("##markup combo", prevStr))
 		{
-			if (ImGui::Selectable(markup.name.c_str()))
+			if (ImGui::Selectable(totalStr))
 			{
-				prevStr = markup.name.c_str();
-				sortType = markup.type;
+				prevStr = totalStr;
+				sortType = eMarkup::None;
+			}
+
+			for (auto &markup : g_global->m_markups)
+			{
+				if (ImGui::Selectable(markup.name.c_str()))
+				{
+					prevStr = markup.name.c_str();
+					sortType = markup.type;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::PopItemWidth();
+
+		cPointCloudDB &pcDb = g_global->m_pcDb;
+		set<int> rmPcs;
+
+		for (auto &date : pcDb.m_project.dates)
+		{
+			for (auto &floor : date->floors)
+			{
+				for (auto &pin : floor->pins)
+				{
+					//ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+					ImGui::PushID(pin->name.c_str());
+					if (ImGui::TreeNode(pin->name.c_str()))
+					{
+						for (auto &pc : pin->pcds)
+						{
+							if (cPointCloudDB::sPCData::MEMO == pc->type)
+								continue;
+
+							if ((sortType != eMarkup::None)
+								&& (pc->markup != sortType))
+								continue;
+
+							ImGui::PushID((int)pc->name.c_str());
+							if (ImGui::TreeNode(pc->name.c_str()))
+							{
+								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
+								if (ImGui::Button("Remove"))
+								{
+									common::Str128 msg;
+									msg.Format("Remove Markup [ %s ]?", pc->name.ansi().c_str());
+									if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+										, msg.c_str(), "CONFIRM", MB_YESNO))
+									{
+										rmPcs.insert(pc->id);
+									}
+								}
+								ImGui::PopStyleColor(3);
+
+								ImGui::TreePop();
+							}//~point tree
+							ImGui::PopID();
+						}//~points
+						ImGui::TreePop();
+					}
+					ImGui::PopID();
+				}//~pins
+			}//~floors
+		}//~dates
+
+		// remove point
+		for (auto &date : pcDb.m_project.dates)
+			for (auto &floor : date->floors)
+				for (auto &id : rmPcs)
+					pcDb.RemoveData(floor, id);
+
+		ImGui::Spacing();
+		ImGui::Spacing();
+	}//~collapsing header
+
+}
+
+
+void cInfoView::RenderMeasure()
+{
+	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+	if (ImGui::CollapsingHeader("Measure"))
+	{
+		// measure button
+		if (ImGui::ImageButton(m_measureTex->m_texSRV, m_measureBtnSize))
+		{
+			if (g_global->m_state == eEditState::Measure)
+			{
+				g_global->m_state = eEditState::VR360;
+				//g_global->m_measures.clear();
+			}
+			else
+			{
+				g_global->m_state = eEditState::Measure;
+				//g_global->m_measures.clear();
 			}
 		}
-		ImGui::EndCombo();
-	}
-	ImGui::PopItemWidth();
 
-	cPointCloudDB &pcDb = g_global->m_pcDb;
-	set<int> rmPcs;
+		ImGui::SameLine();
+		if (g_global->m_state == eEditState::Measure)
+			ImGui::Text("Measure Mode");
+		else
+			ImGui::Text("None");			
 
-	for (auto &date : pcDb.m_project.dates)
-	{
-		for (auto &floor : date->floors)
+		ImGui::TextUnformatted("Show Measure");
+		ImGui::SameLine();
+		ImGui::Checkbox("##showmeasure", &g_global->m_3dView->m_isShowMeasure);
+
+		ImGui::SameLine();
+		if (ImGui::Button("Clear"))
+			g_global->m_measures.clear();
+
+		int rmPt = -1;
+		for (uint i = 0; i < g_global->m_measures.size(); ++i)
 		{
-			for (auto &pin : floor->pins)
-			{
-				//ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-				ImGui::PushID(pin->name.c_str());
-				if (ImGui::TreeNode(pin->name.c_str()))
-				{
-					for (auto &pc : pin->pcds)
-					{
-						if (cPointCloudDB::sPCData::MEMO == pc->type)
-							continue;
+			const sMeasurePt &p0 = g_global->m_measures[i];
 
-						if ((sortType != eMarkup::None)
-							&& (pc->markup != sortType))
-							continue;
+			ImGui::PushID((int)&p0);
+			if (ImGui::Button("X"))
+				rmPt = (int)i;
+			ImGui::PopID();
 
-						ImGui::PushID((int)pc->name.c_str());
-						if (ImGui::TreeNode(pc->name.c_str()))
-						{
-							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
-							if (ImGui::Button("Remove"))
-							{
-								common::Str128 msg;
-								msg.Format("Remove Markup [ %s ]?", pc->name.ansi().c_str());
-								if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-									, msg.c_str(), "CONFIRM", MB_YESNO))
-								{
-									rmPcs.insert(pc->id);
-								}
-							}
-							ImGui::PopStyleColor(3);
+			common::Str128 text;
+			text.Format("%.1f, %.1f, %.1f", p0.rpos.x, p0.rpos.y, p0.rpos.z);
+			ImGui::SameLine();
+			ImGui::Selectable(text.c_str());
+		}
 
-							ImGui::TreePop();
-						}//~point tree
-						ImGui::PopID();
-					}//~points
-					ImGui::TreePop();
-				}
-				ImGui::PopID();
-			}//~pins
-		}//~floors
-	}//~dates
+		// remove measure point
+		if (rmPt >= 0)
+		{
+			common::rotatepopvector(g_global->m_measures, rmPt);
+		}
 
-	// remove point
-	for (auto &date : pcDb.m_project.dates)
-		for (auto &floor : date->floors)
-			for (auto &id : rmPcs)
-				pcDb.RemoveData(floor, id);
+		ImGui::Spacing();
+		ImGui::Spacing();
+	}
+}
+
+
+void cInfoView::RenderCapture()
+{
+	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+	if (ImGui::CollapsingHeader("Capture"))
+	{
+		// capture button
+		if (ImGui::ImageButton(m_captureTex->m_texSRV, m_captureBtnSize))
+		{
+			g_global->m_state = eEditState::Capture;
+		}
+
+		for (auto &fileName : g_global->m_captures)
+			ImGui::Selectable(fileName.c_str());
+
+		ImGui::Spacing();
+		ImGui::Spacing();
+	}
 }
 
 
@@ -260,70 +339,73 @@ void cInfoView::RenderPinHierarchy()
 {
 	cPointCloudDB &pcDb = g_global->m_pcDb;
 
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-
-	ImGui::Text("Memo List");
-
-	set<int> rmPcs;
-	for (auto &date : pcDb.m_project.dates)
+	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+	if (ImGui::CollapsingHeader("Pin Hierarchy"))
 	{
-		for (auto &floor : date->floors)
+		//ImGui::Spacing();
+		//ImGui::Separator();
+		//ImGui::Spacing();
+		//ImGui::Text("Memo List");
+
+		set<int> rmPcs;
+		for (auto &date : pcDb.m_project.dates)
 		{
-			for (auto &pin : floor->pins)
+			for (auto &floor : date->floors)
 			{
-				ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-				if (ImGui::TreeNode(pin->name.c_str()))
+				for (auto &pin : floor->pins)
 				{
-					for (auto &pc : pin->pcds)
+					ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+					if (ImGui::TreeNode(pin->name.c_str()))
 					{
-						if (cPointCloudDB::sPCData::MARKUP == pc->type)
-							continue;
-
-						ImGui::PushID((int)pc->name.c_str());
-						if (ImGui::TreeNode(pc->name.c_str()))
+						for (auto &pc : pin->pcds)
 						{
-							ImGui::PushID(pc + 1);
-							common::Str128 text;
-							//text.Format("Pos : %.2f, %.2f, %.2f", pc->pos.x, pc->pos.y, pc->pos.z);
-							text.Format("Pos : %.2f,%.2f", pc->uvpos.x, pc->uvpos.y);
-							ImGui::Selectable(text.c_str());
-							ImGui::PopID();
+							if (cPointCloudDB::sPCData::MARKUP == pc->type)
+								continue;
 
-							ImGui::PushID(pc + 2);
-							ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE);
-							ImGui::PopID();
-
-							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
-							ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
-							if (ImGui::Button("Remove"))
+							ImGui::PushID((int)pc->name.c_str());
+							if (ImGui::TreeNode(pc->name.c_str()))
 							{
-								common::Str128 msg;
-								msg.Format("Remove Point [ %s ]?", pc->name.c_str());
-								if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-									, msg.c_str(), "CONFIRM", MB_YESNO))
+								ImGui::PushID(pc + 1);
+								common::Str128 text;
+								//text.Format("Pos : %.2f, %.2f, %.2f", pc->pos.x, pc->pos.y, pc->pos.z);
+								text.Format("Pos : %.2f,%.2f", pc->uvpos.x, pc->uvpos.y);
+								ImGui::Selectable(text.c_str());
+								ImGui::PopID();
+
+								ImGui::PushID(pc + 2);
+								ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE);
+								ImGui::PopID();
+
+								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
+								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
+								if (ImGui::Button("Remove"))
 								{
-									rmPcs.insert(pc->id);
+									common::Str128 msg;
+									msg.Format("Remove Point [ %s ]?", pc->name.c_str());
+									if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+										, msg.c_str(), "CONFIRM", MB_YESNO))
+									{
+										rmPcs.insert(pc->id);
+									}
 								}
-							}
-							ImGui::PopStyleColor(3);
+								ImGui::PopStyleColor(3);
 
-							ImGui::TreePop();
-						}//~point tree
-						ImGui::PopID();
-					} //~points
+								ImGui::TreePop();
+							}//~point tree
+							ImGui::PopID();
+						} //~points
 
-					ImGui::TreePop();
-				}//~pin tree
-			}//~pins
-		} //~floors
-	}//~dates
+						ImGui::TreePop();
+					}//~pin tree
+				}//~pins
+			} //~floors
+		}//~dates
 
-	// remove point
-	for (auto &date : pcDb.m_project.dates)
-		for (auto &floor : date->floors)
-			for (auto &id : rmPcs)
-				pcDb.RemoveData(floor, id);
+		// remove point
+		for (auto &date : pcDb.m_project.dates)
+			for (auto &floor : date->floors)
+				for (auto &id : rmPcs)
+					pcDb.RemoveData(floor, id);
+	}//~collapsing header
 }

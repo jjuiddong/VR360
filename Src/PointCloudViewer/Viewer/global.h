@@ -10,6 +10,20 @@ class cInfoView;
 class cHierarchyView;
 class cPointCloudMap;
 
+enum eEditState {
+	VR360, Measure, Capture
+};
+
+
+// measure information
+struct sMeasurePt 
+{
+	Vector3 epos; // equirectangular pos
+	Vector3 rpos; // real pos, point cloud pos
+	Vector2 uv;
+};
+
+
 class cGlobal
 {
 public:
@@ -24,6 +38,7 @@ public:
 
 
 public:
+	eEditState m_state;
 	c3DView *m_3dView;
 	cInfoView *m_infoView;
 	cHierarchyView *m_hierarchyView;
@@ -35,4 +50,7 @@ public:
 	string m_cDateStr; // current date Name
 	string m_cFloorStr; // current Floor Name
 	string m_cPinStr; // current Pin Name
+
+	vector<sMeasurePt> m_measures; // point cloud position array
+	vector<string> m_captures; // cpature file array
 };

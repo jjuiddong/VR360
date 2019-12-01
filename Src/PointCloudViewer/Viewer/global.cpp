@@ -6,6 +6,7 @@
 
 cGlobal::cGlobal()
 	: m_pcMap(nullptr)
+	, m_state(eEditState::VR360)
 {
 }
 

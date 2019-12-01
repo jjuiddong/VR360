@@ -26,6 +26,7 @@ protected:
 	void RenderPopupmenu();
 	void RenderPcMemo();
 	void RenderMarkup(graphic::cRenderer &renderer);
+	void RenderMeasure(graphic::cRenderer &renderer);
 	Vector3 PickPointCloud(const POINT mousePt);
 	bool JumpPin(const string &pinName);
 	
@@ -52,7 +53,6 @@ public:
 	graphic::cRenderTarget m_renderTarget;
 	graphic::cTexture *m_keymapBtnTex;
 	ImVec2 m_keymapBtnSize;
-
 	cPointCloudDB::sPin *m_curPinInfo; // current select camera
 
 	Vector3 m_pickPos;
@@ -71,7 +71,8 @@ public:
 	bool m_isShowPopupMenu;
 	bool m_isBeginPopupMenu;
 	bool m_isShowKeymap;
-	
+	bool m_isShowMeasure;
+
 	bool m_isUpdatePcWindowPos; // point information 창 위치를 재조정한다.
 
 	// MouseMove Variable
