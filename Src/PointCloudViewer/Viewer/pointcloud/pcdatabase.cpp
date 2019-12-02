@@ -417,7 +417,7 @@ cPointCloudDB::sPin* cPointCloudDB::FindPin(sFloor *floor
 }
 
 
-cPointCloudDB::sPin* cPointCloudDB::FindPin(const StrId dateName
+cPointCloudDB::sPin* cPointCloudDB::FindPin(const StrId &dateName
 	, const StrId &floorName, const StrId &pinName)
 {
 	sFloor *floor = FindFloor(dateName, floorName);
@@ -560,6 +560,45 @@ Vector2 cPointCloudDB::ParseVector2(const string &str)
 bool cPointCloudDB::IsLoad()
 {
 	return !m_project.name.empty();
+}
+
+
+// dateStr, floorStr, pinStr에 해당하는 장면을 복사해서 리턴한다.
+bool cPointCloudDB::MakeShareFile(const StrId &dateStr, const StrId &floorStr
+	, const StrId &pinStr, OUT sProject &out)
+{
+	sDate *date = FindDate(dateStr);
+	sFloor *floor = FindFloor(dateStr, floorStr);
+	sPin *pin = FindPin(dateStr, floorStr, pinStr);
+	if (!date || !floor || !pin)
+		return false;
+
+	out = m_project;
+	out.dates.clear();
+
+	sDate *ndate = new sDate();
+	*ndate = *date;
+	ndate->floors.clear();
+	out.dates.push_back(ndate);
+
+	sFloor *nfloor = new sFloor;
+	*nfloor = *floor;
+	nfloor->pins.clear();
+	ndate->floors.push_back(nfloor);
+
+	sPin *npin = new sPin;
+	*npin = *pin;
+	npin->pcds.clear();
+	nfloor->pins.push_back(npin);
+
+	for (auto &pcd : pin->pcds)
+	{
+		sPCData *p = new sPCData;
+		*p = *pcd;
+		npin->pcds.push_back(p);
+	}
+
+	return true;
 }
 
 

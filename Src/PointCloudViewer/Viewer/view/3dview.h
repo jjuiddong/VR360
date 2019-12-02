@@ -25,10 +25,12 @@ protected:
 	void RenderKeymap(const ImVec2 &pos);
 	void RenderPopupmenu();
 	void RenderPcMemo();
+	void RenderShareFile();
 	void RenderMarkup(graphic::cRenderer &renderer);
 	void RenderMeasure(graphic::cRenderer &renderer);
 	Vector3 PickPointCloud(const POINT mousePt);
 	bool JumpPin(const string &pinName);
+	bool MakeShareFile();
 	
 	void UpdateLookAt(const POINT &mousePt);
 	void OnWheelMove(const float delta, const POINT mousePt);
@@ -52,7 +54,9 @@ public:
 	graphic::cBillboard m_markup;
 	graphic::cRenderTarget m_renderTarget;
 	graphic::cTexture *m_keymapBtnTex;
+	graphic::cTexture *m_shareBtnTex;
 	ImVec2 m_keymapBtnSize;
+	ImVec2 m_shareBtnSize;
 	cPointCloudDB::sPin *m_curPinInfo; // current select camera
 
 	Vector3 m_pickPos;
@@ -60,6 +64,7 @@ public:
 	Vector4 m_pickUV;
 	Vector2 m_uv;
 	Vector2 m_pointUV;
+	POINT m_popupMenuPos;
 	common::Ray m_pointUVRay;
 	float m_sphereRadius;
 	float m_pickPosDistance;

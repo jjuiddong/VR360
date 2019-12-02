@@ -77,10 +77,19 @@ void cInfoView::OnUpdate(const float deltaSeconds)
 void cInfoView::OnRender(const float deltaSeconds)
 {
 	// share button
-	//ImGui::SameLine();
-	if (ImGui::ImageButton(m_shareTex->m_texSRV, m_shareBtnSize))
-	{
+	//const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+	//ImGui::PushStyleColor(ImGuiCol_Button, col);
+	//if (ImGui::ImageButton(m_shareTex->m_texSRV, m_shareBtnSize))
+	//{
 
+	//}
+	//ImGui::PopStyleColor();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted("Share");
+		ImGui::EndTooltip();
 	}
 
 	RenderMarkupList();
@@ -107,10 +116,20 @@ void cInfoView::RenderMarkupList()
 		//ImGui::Text("Mark-up List");
 		//ImGui::Spacing();
 
+		const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+		ImGui::PushStyleColor(ImGuiCol_Button, col);
 		if (ImGui::ImageButton(m_markupTex->m_texSRV, m_markupBtnSize))
 		{
 			g_global->m_3dView->m_pointCloudPos = g_global->m_3dView->m_pickPos;
 			m_isShowPopupMenu = true;
+		}
+		ImGui::PopStyleColor();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Mark-up");
+			ImGui::EndTooltip();
 		}
 
 		ImGui::Text(u8"Á¤·Ä:");
@@ -206,19 +225,40 @@ void cInfoView::RenderMeasure()
 	if (ImGui::CollapsingHeader("Measure"))
 	{
 		// measure button
+		ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+
+		// 'Measure' toggle style button
+		if (g_global->m_state == eEditState::Measure)
+		{
+			const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+			ImGui::PushStyleColor(ImGuiCol_Button, col);
+		}
+		else
+		{
+			const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+			ImGui::PushStyleColor(ImGuiCol_Button, col);
+		}
+
 		if (ImGui::ImageButton(m_measureTex->m_texSRV, m_measureBtnSize))
 		{
 			if (g_global->m_state == eEditState::Measure)
 			{
 				g_global->m_state = eEditState::VR360;
-				//g_global->m_measures.clear();
 			}
 			else
 			{
 				g_global->m_state = eEditState::Measure;
-				//g_global->m_measures.clear();
 			}
 		}
+		ImGui::PopStyleColor(1);
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Measure Mode");
+			ImGui::EndTooltip();
+		}
+		//~button
 
 		ImGui::SameLine();
 		if (g_global->m_state == eEditState::Measure)
@@ -268,9 +308,19 @@ void cInfoView::RenderCapture()
 	if (ImGui::CollapsingHeader("Capture"))
 	{
 		// capture button
+		const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+		ImGui::PushStyleColor(ImGuiCol_Button, col);
 		if (ImGui::ImageButton(m_captureTex->m_texSRV, m_captureBtnSize))
 		{
 			g_global->m_state = eEditState::Capture;
+		}
+		ImGui::PopStyleColor();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Capture");
+			ImGui::EndTooltip();
 		}
 
 		for (auto &fileName : g_global->m_captures)
@@ -290,10 +340,11 @@ void cInfoView::RenderPopupmenu()
 
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
 		g_global->m_cDateStr, g_global->m_cFloorStr);
-	if (!floor)
+	if (!floor || pointCloudPos.IsEmpty())
+	{
+		m_isShowPopupMenu = false;
 		return;
-	if (pointCloudPos.IsEmpty())
-		return;
+	}
 
 	if (m_isShowPopupMenu)
 	{

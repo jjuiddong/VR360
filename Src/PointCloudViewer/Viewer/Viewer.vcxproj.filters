@@ -55,18 +55,17 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cursor1.cur" />
-  </ItemGroup>
-  <ItemGroup>
     <Image Include="icon1.ico" />
-    <Image Include="..\..\..\Package\media\변경(PC아이콘).png">
-      <Filter>Resource</Filter>
-    </Image>
     <Image Include="icon2.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Viewer.rc">
       <Filter>Resource</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cursor1.cur">
+      <Filter>Resource</Filter>
+    </None>
   </ItemGroup>
 </Project>

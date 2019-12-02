@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include "3dview.h"
+#include "hierarchyview.h"
 
 using namespace graphic;
 using namespace framework;
@@ -23,7 +24,9 @@ c3DView::c3DView(const string &name)
 	, m_sphereRadius(1000)
 	, m_pickPosDistance(10.f)
 	, m_keymapBtnTex(nullptr)
+	, m_shareBtnTex(nullptr)
 	, m_keymapBtnSize(40, 20)
+	, m_shareBtnSize(40, 20)
 	, m_isShowKeymap(true)
 	, m_isShowMeasure(true)
 {
@@ -120,6 +123,16 @@ bool c3DView::Init(cRenderer &renderer)
 		const float r = (float)m_keymapBtnTex->m_imageInfo.Height
 		/ (float)m_keymapBtnTex->m_imageInfo.Width;
 		m_keymapBtnSize.y = r * (float)m_keymapBtnSize.x;
+	}
+
+	// 공유 버튼 생성
+	m_shareBtnTex = graphic::cResourceManager::Get()->LoadTexture(
+		renderer, "./media/icon/sharebtn.png");
+	if (m_shareBtnTex)
+	{
+		const float r = (float)m_shareBtnTex->m_imageInfo.Height
+			/ (float)m_shareBtnTex->m_imageInfo.Width;
+		m_shareBtnSize.y = r * m_shareBtnSize.x;
 	}
 
 	return true;
@@ -226,6 +239,15 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 		}
 
+		// Render Line to PopupMenu
+		if (m_isBeginPopupMenu)
+		{
+			const Ray ray = GetMainCamera().GetRay(m_popupMenuPos.x, m_popupMenuPos.y);
+			renderer.m_dbgLine.SetColor(cColor::YELLOW);
+			renderer.m_dbgLine.SetLine(m_pickPos, ray.orig + ray.dir * 100.f, 0.001f);
+			renderer.m_dbgLine.Render(renderer);
+		}
+
 		if (m_isShowMeasure)
 			RenderMeasure(renderer);
 		
@@ -325,13 +347,17 @@ void c3DView::OnRender(const float deltaSeconds)
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Checkbox("Equirectangular", &m_isShowTexture);
-		ImGui::SameLine();
-		ImGui::Checkbox("Wireframe", &m_isShowWireframe);
+		if (ImGui::Checkbox("Equirectangular", &m_isShowTexture))
+			m_isShowPointCloud1 = !m_isShowTexture;
+
+		//ImGui::SameLine();
+		//ImGui::Checkbox("Wireframe", &m_isShowWireframe);
 		//ImGui::SameLine();
 		//ImGui::Checkbox("GridLine", &m_isShowGridLine);
-		//ImGui::SameLine();
-		ImGui::Checkbox("PointCloud 3D", &m_isShowPointCloud1);
+		ImGui::SameLine();
+		if (ImGui::Checkbox("3D      ", &m_isShowPointCloud1))
+			m_isShowTexture = !m_isShowPointCloud1;
+
 		ImGui::SameLine();
 		ImGui::Checkbox("PCMap", &m_isShowPointCloud2);
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
@@ -339,6 +365,7 @@ void c3DView::OnRender(const float deltaSeconds)
 	ImGui::End();
 	ImGui::PopStyleColor();
 
+	RenderShareFile();
 	RenderKeymap(pos);
 	RenderPopupmenu();
 	RenderPcMemo();
@@ -348,6 +375,11 @@ void c3DView::OnRender(const float deltaSeconds)
 // render keymap
 void c3DView::RenderKeymap(const ImVec2 &pos)
 {
+	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
+		g_global->m_cDateStr, g_global->m_cFloorStr);
+	if (!floor)
+		return;
+
 	const common::sRectf viewRect = GetWindowSizeAvailible();
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
 		| ImGuiWindowFlags_NoBackground
@@ -361,9 +393,19 @@ void c3DView::RenderKeymap(const ImVec2 &pos)
 	if (ImGui::Begin("keymap window", &isOpen, flags))
 	{
 		// keymap toggle button
+		const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+		ImGui::PushStyleColor(ImGuiCol_Button, col);
 		if (ImGui::ImageButton(m_keymapBtnTex->m_texSRV, m_keymapBtnSize))
 		{
 			m_isShowKeymap = !m_isShowKeymap;
+		}
+		ImGui::PopStyleColor();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Keymap On/Off");
+			ImGui::EndTooltip();
 		}
 
 		if (g_global->m_pcDb.IsLoad()
@@ -431,10 +473,11 @@ void c3DView::RenderPopupmenu()
 {
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
 		g_global->m_cDateStr, g_global->m_cFloorStr);
-	if (!floor)
+	if (!floor || m_pointCloudPos.IsEmpty())
+	{
+		m_isShowPopupMenu = false;
 		return;
-	if (m_pointCloudPos.IsEmpty())
-		return;
+	}
 
 	if (m_isShowPopupMenu)
 	{
@@ -623,6 +666,42 @@ void c3DView::RenderPcMemo()
 }
 
 
+// render sharefile button
+void c3DView::RenderShareFile()
+{
+	if (!m_curPinInfo)
+		return;
+
+	const common::sRectf viewRect = GetWindowSizeAvailible();
+	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
+		| ImGuiWindowFlags_NoBackground
+		;
+
+	bool isOpen = true;
+	ImGui::SetNextWindowPos(ImVec2((float)m_viewPos.x + viewRect.Width() - 60.f, (float)m_viewPos.y));
+	ImGui::SetNextWindowSize(ImVec2(80, 80));
+	if (ImGui::Begin("##sharebtn window", &isOpen, flags))
+	{
+		// keymap toggle button
+		const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+		ImGui::PushStyleColor(ImGuiCol_Button, col);
+		if (ImGui::ImageButton(m_shareBtnTex->m_texSRV, m_shareBtnSize))
+		{
+			MakeShareFile();
+		}
+		ImGui::PopStyleColor();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Share");
+			ImGui::EndTooltip();
+		}
+	}
+	ImGui::End();
+}
+
+
 // render markup icon in 3d space
 void c3DView::RenderMarkup(graphic::cRenderer &renderer)
 {
@@ -755,9 +834,166 @@ bool c3DView::JumpPin(const string &pinName)
 		}
 	}
 
-
 	m_isUpdatePcWindowPos = true; // use OnRender() function
 	m_curPinInfo = pin;
+
+	return true;
+}
+
+
+// make share file
+// 현재 보고있는 장면만 공유한다.
+// date, floor, pin, markup, memo 정보
+bool c3DView::MakeShareFile()
+{
+	if (!m_curPinInfo)
+	{
+		::MessageBoxA(m_owner->getSystemHandle(), "Error ShareFile1", "ERROR", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	// 현재 보고있는 장면만 복사한다.
+	cPointCloudDB::sProject shareProj;
+	if (!g_global->m_pcDb.MakeShareFile(g_global->m_cDateStr, g_global->m_cFloorStr
+		, g_global->m_cPinStr, shareProj))
+	{
+		::MessageBoxA(m_owner->getSystemHandle(), "Error ShareFile2", "ERROR", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	const string dateTimeStr = common::GetCurrentDateTime();
+	
+	// 공유용 폴더를 하나 생성하고, (project dir/share/today date/)
+	// 공유할 파일만 공유폴더에 복사한다.
+	// keymap, vr360 경로 정보를 바뀐 경로로 수정한다.
+	for (auto &date : shareProj.dates)
+	{
+		for (auto &floor : date->floors)
+		{
+			string dstFileName;
+			dstFileName = shareProj.dir.c_str();
+			dstFileName += "share";
+
+			// make share folder
+			StrPath checkDir(dstFileName);
+			if (!checkDir.IsFileExist())
+			{
+				if (!CreateDirectoryA(checkDir.c_str(), NULL))
+				{
+					::MessageBoxA(m_owner->getSystemHandle()
+						, "Error ShareFile3", "ERROR", MB_OK | MB_ICONERROR);
+					return false;
+				}
+			}
+
+			// make share/current date folder
+			dstFileName += "\\" + dateTimeStr;
+			StrPath checkDir2(dstFileName);
+			if (!checkDir2.IsFileExist())
+			{
+				if (!CreateDirectoryA(checkDir2.c_str(), NULL))
+				{
+					::MessageBoxA(m_owner->getSystemHandle()
+						, "Error ShareFile4", "ERROR", MB_OK | MB_ICONERROR);
+					return false;
+				}
+			}
+
+			// make share/current date/date folder
+			dstFileName += "\\" + g_global->m_cDateStr;
+			StrPath checkDir3(dstFileName);
+			if (!checkDir3.IsFileExist())
+			{
+				if (!CreateDirectoryA(checkDir3.c_str(), NULL))
+				{
+					::MessageBoxA(m_owner->getSystemHandle()
+						, "Error ShareFile5", "ERROR", MB_OK | MB_ICONERROR);
+					return false;
+				}
+			}
+
+			// make share/current date/date/floor folder
+			dstFileName += "\\" + g_global->m_cFloorStr;
+			StrPath checkDir4(dstFileName);
+			if (!checkDir4.IsFileExist())
+			{
+				if (!CreateDirectoryA(checkDir4.c_str(), NULL))
+				{
+					::MessageBoxA(m_owner->getSystemHandle()
+						, "Error ShareFile6", "ERROR", MB_OK | MB_ICONERROR);
+					return false;
+				}
+			}
+
+			// copy keymapfile to share folder
+			const StrPath keymapFileName = dstFileName + "\\" + floor->keymapFileName.GetFileName();
+			if (floor->keymapFileName.IsFileExist())
+			{
+				// copy to share folder
+				if (!::CopyFileA(floor->keymapFileName.c_str(), keymapFileName.c_str(), FALSE))
+				{
+					::MessageBoxA(m_owner->getSystemHandle()
+						, "Error ShareFile7", "ERROR", MB_OK | MB_ICONERROR);
+					return false;
+				}
+				floor->keymapFileName = keymapFileName;
+			}
+
+			for (auto &pin : floor->pins)
+			{
+				const StrPath pcdFileName = dstFileName + "\\" + pin->pc3dFileName.GetFileName();
+				const StrPath textureFileName = dstFileName + "\\" + pin->pcTextureFileName.GetFileName();
+
+				if (pin->pc3dFileName.IsFileExist())
+				{
+					// copy to share folder
+					if (!::CopyFileA(pin->pc3dFileName.c_str(), pcdFileName.c_str(), FALSE))
+					{
+						::MessageBoxA(m_owner->getSystemHandle()
+							, "Error ShareFile8", "ERROR", MB_OK | MB_ICONERROR);
+						return false;
+					}
+
+					pin->pc3dFileName = pcdFileName;
+				}
+
+				if (pin->pcTextureFileName.IsFileExist())
+				{
+					// copy to share folder
+					if (!::CopyFileA(pin->pcTextureFileName.c_str(), textureFileName.c_str(), FALSE))
+					{
+						::MessageBoxA(m_owner->getSystemHandle()
+							, "Error ShareFile9", "ERROR", MB_OK | MB_ICONERROR);
+						return false;
+					}
+
+					pin->pcTextureFileName = textureFileName;
+				}
+			}//~pins
+		}//~floors
+	}//~dates
+
+
+	cPointCloudDB pcDb;
+	pcDb.m_project = shareProj;
+
+	string dstFileName;
+	dstFileName = shareProj.dir.c_str();
+	dstFileName += "share";
+	dstFileName += string("\\") + dateTimeStr + "\\" + "share_" + shareProj.name.c_str();
+	dstFileName += ".prj";
+	if (pcDb.Write(dstFileName))
+	{
+		Str128 text;
+		text.Format("Success Save Share File\n\n %s", dstFileName.c_str());
+		::MessageBoxA(m_owner->getSystemHandle()
+			, text.c_str(), "CONFIRM", MB_OK | MB_ICONINFORMATION);
+	}
+	else
+	{
+		::MessageBoxA(m_owner->getSystemHandle()
+			, "Error ShareFile(0)", "ERROR", MB_OK | MB_ICONERROR);
+	}
 
 	return true;
 }
@@ -766,22 +1002,6 @@ bool c3DView::JumpPin(const string &pinName)
 void c3DView::UpdateLookAt(const POINT &mousePt)
 {
 	GetMainCamera().MoveCancel();
-
-	//const float centerX = GetMainCamera().m_width / 2;
-	//const float centerY = GetMainCamera().m_height / 2;
-	//const Ray ray = GetMainCamera().GetRay((int)centerX, (int)centerY);
-	//const float distance = m_groundPlane1.Collision(ray.dir);
-	//if (distance < -0.2f)
-	//{
-		//GetMainCamera().m_lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
-	//}
-	//else
-	//{ // horizontal viewing
-		//const Vector3 lookAt = GetMainCamera().m_eyePos + GetMainCamera().GetDirection() * 20.f;
-		//GetMainCamera().m_lookAt = lookAt;
-	//}
-
-	//GetMainCamera().UpdateViewMatrix();
 }
 
 
@@ -848,6 +1068,10 @@ void c3DView::OnMouseDown(const sf::Mouse::Button &button, const POINT mousePt)
 	UpdateLookAt(mousePt);
 	SetCapture();
 
+	// if edit project info, ignore mouse event
+	if (g_global->m_hierarchyView->m_isOpenNewProj)
+		return;
+
 	switch (button)
 	{
 	case sf::Mouse::Left:
@@ -869,6 +1093,10 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 	m_mousePos = mousePt;
 	ReleaseCapture();
 
+	// if edit project info, ignore mouse event
+	if (g_global->m_hierarchyView->m_isOpenNewProj)
+		return;
+
 	switch (button)
 	{
 	case sf::Mouse::Left:
@@ -883,9 +1111,6 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 			m_pointUVRay = ray;
 			const Vector3 pos = ray.dir * m_pickPosDistance + ray.orig;
 			m_pickPos = pos;
-			//if (g_global->m_pcMap)
-			//	m_pickPos = g_global->m_pcMap->GetPosition(Vector2(uv.x, 1.f-uv.y));
-			//m_pickPos = PickPointCloud(mousePt);
 
 			if ((eEditState::Measure == g_global->m_state)
 				&& g_global->m_pcMap)
@@ -916,6 +1141,7 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 			// 마우스 오른쪽 버튼을 눌렀다 떼야 팝업메뉴가 출력된다.
 			m_isShowPopupMenu = true;
 			m_pointCloudPos = m_pickPos;
+			m_popupMenuPos = mousePt;
 		}
 	}
 	break;
@@ -970,13 +1196,13 @@ void c3DView::OnEventProc(const sf::Event &evt)
 
 		if (sf::Event::MouseButtonPressed == evt.type)
 		{
-			if (viewRect.IsIn((float)curPos.x, (float)curPos.y))
+			if (viewRect.IsIn((float)pos.x, (float)pos.y))
 				OnMouseDown(evt.mouseButton.button, pos);
 		}
 		else
 		{
 			// 화면밖에 마우스가 있더라도 Capture 상태일 경우 Up 이벤트는 받게한다.
-			if (viewRect.IsIn((float)curPos.x, (float)curPos.y)
+			if (viewRect.IsIn((float)pos.x, (float)pos.y)
 				|| (this == GetCapture()))
 				OnMouseUp(evt.mouseButton.button, pos);
 		}

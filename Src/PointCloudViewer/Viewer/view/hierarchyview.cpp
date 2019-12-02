@@ -387,8 +387,9 @@ bool cHierarchyView::RenderEditPinDlg()
 		RenderDateEdit();
 		RenderFloorEdit();
 
-		// 도면 출력
+		// Keymap 출력
 		const ImVec2 keymapPos = ImGui::GetCursorPos();
+		const ImVec2 keymapScreenPos = ImGui::GetCursorScreenPos();
 		if (ImGui::BeginChild("image", ImVec2(320, 320), true))
 		{
 			const Vector2 size(300, 300); // keymap image size
@@ -406,11 +407,11 @@ bool cHierarchyView::RenderEditPinDlg()
 					for (auto &pin : m_selFloor->pins)
 					{
 						// keymapPos is uv coordinate system
-						const Vector2 keymapPos = pin->keymapPos;
+						const Vector2 pinPos = pin->keymapPos;
 
 						const Vector2 pos = offset +
-							Vector2(size.x * keymapPos.x
-								, size.y * keymapPos.y);
+							Vector2(size.x * pinPos.x
+								, size.y * pinPos.y);
 
 						ImGui::SetCursorPos(*(ImVec2*)&pos);
 						ImGui::Image(m_pinImg->m_texSRV, ImVec2(10, 10));
@@ -423,6 +424,25 @@ bool cHierarchyView::RenderEditPinDlg()
 					}
 				}
 				ImGui::SetCursorPos(oldPos); // recovery
+
+				// check mouse click to pin positioning
+				if (ImGui::IsMouseClicked(0) && m_selPin)
+				{
+					const Vector2 keymapScrPos(keymapScreenPos.x, keymapScreenPos.y);
+					const Vector2 leftTop = keymapScrPos + offset + Vector2(5,5);
+					const common::sRectf imgR(leftTop.x, leftTop.y
+						, leftTop.x + 300.f, leftTop.y + 300.f);
+					const ImVec2 mousePt = ImGui::GetMousePos();
+
+					if (imgR.IsIn(mousePt.x, mousePt.y))
+					{
+						const float x = mousePt.x - imgR.left;
+						const float y = mousePt.y - imgR.top;
+						const float u = x / imgR.Width();
+						const float v = y / imgR.Height();
+						m_selPin->keymapPos = Vector2(u, v);
+					}
+				}
 			}
 			else
 			{
@@ -431,7 +451,6 @@ bool cHierarchyView::RenderEditPinDlg()
 		}
 		ImGui::EndChild();
 
-		//ImGui::Spacing();
 		ImGui::Spacing();
 
 		// 카메라 속성 편집 화면
@@ -933,6 +952,7 @@ bool cHierarchyView::UpdateDirectoryHierarchy(
 	exts.push_back(".png"); exts.push_back(".PNG");
 	exts.push_back(".obj"); exts.push_back(".OBJ");
 	exts.push_back(".txt"); exts.push_back(".TXT");
+	exts.push_back(".pcmap"); exts.push_back(".PCMAP");
 	common::CollectFiles2(exts, searchPath.c_str(), searchPath.c_str(), files);
 	m_hierarchy = common::CreateFolderNode(files, true);
 

@@ -198,7 +198,6 @@
     <None Include="cursor1.cur" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\Package\media\변경(PC아이콘).png" />
     <Image Include="icon1.ico" />
     <Image Include="icon2.ico" />
   </ItemGroup>

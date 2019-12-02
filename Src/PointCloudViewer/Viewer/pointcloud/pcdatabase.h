@@ -96,7 +96,7 @@ public:
 	sPin* AddPin(sFloor *floor, const StrId &name, const Vector3 &pos);
 	bool RemovePin(sFloor *floor, const StrId &name);
 	sPin* FindPin(sFloor *floor, const StrId &name);
-	sPin* FindPin(const StrId dateName, const StrId &floorName, const StrId &pinName);
+	sPin* FindPin(const StrId &dateName, const StrId &floorName, const StrId &pinName);
 	sPin* FindPinByPointId(sFloor *floor, const int pointId);
 
 	sPCData* CreateData(sFloor *floor, const StrId &pinName);
@@ -105,6 +105,8 @@ public:
 	sPCData* FindData(sFloor *floor, const int pointId);
 	sPCData* FindData(const StrId dateName, const StrId &floorName, const int pointId);
 	sPCData* FindData(sFloor *floor, const StrId &pinName, const Vector3 &pos);
+	bool MakeShareFile(const StrId &dateStr, const StrId &floorStr, const StrId &pinStr
+		, OUT sProject &out);
 
 	cPointCloudDB& operator=(const cPointCloudDB &rhs);
 

@@ -187,18 +187,24 @@ void cViewer::OnRenderTitleBar()
 	const float systemBtnSizeX3 = (systemBtnSize * 3) + 28;
 
 	ImGui::ImageButton(m_titleIconTex->m_texSRV, m_titleIconSize);
+	const bool clicked1 = ImGui::IsMouseDown(0) && ImGui::IsItemHovered() 
+		&& (eState::NORMAL_DOWN == cRenderWindow::m_state);
 	ImGui::SameLine(0, 2);
 	ImGui::ImageButton(m_projectIconTex->m_texSRV, m_projectIconSize);
+	const bool clicked2 = ImGui::IsMouseDown(0) && ImGui::IsItemHovered()
+		&& (eState::NORMAL_DOWN == cRenderWindow::m_state);
 
 	ImGui::PushFont(m_fontBig);
 	const float w = m_titleIconSize.x + m_projectIconSize.x + 60;
 	ImGui::SameLine(0, 0);
 	ImGui::Button(m_title.c_str(), ImVec2((float)getSize().x - w - systemBtnSizeX3, m_titleBarHeight));
 	ImGui::PopFont();
+	const bool clicked3 = ImGui::IsMouseDown(0) && ImGui::IsItemHovered()
+		&& (eState::NORMAL_DOWN == cRenderWindow::m_state);
 
 	// TitleBar Click?
 	if (ImGui::IsMouseDown(0)
-		&& ((ImGui::IsItemHovered() && (eState::NORMAL_DOWN == cRenderWindow::m_state))
+		&& ((clicked1 || clicked2 || clicked3)
 			|| cDockManager::Get()->IsMoveState())
 		)
 	{
@@ -342,10 +348,10 @@ void cViewer::OnEventProc(const sf::Event &evt)
 	switch (evt.type)
 	{
 	case sf::Event::KeyPressed:
-		switch (evt.key.cmd)
-		{
-		case sf::Keyboard::Escape: close(); break;
-		}
+		//switch (evt.key.cmd)
+		//{
+		//case sf::Keyboard::Escape: close(); break;
+		//}
 		break;
 	}
 }
