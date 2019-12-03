@@ -947,13 +947,16 @@ bool cHierarchyView::UpdateDirectoryHierarchy(
 
 	list<string> files;
 	list<string> exts;
+	list<string> ignores;
 	exts.push_back(".bmp"); exts.push_back(".BMP");
 	exts.push_back(".jpg"); exts.push_back(".JPG");
 	exts.push_back(".png"); exts.push_back(".PNG");
 	exts.push_back(".obj"); exts.push_back(".OBJ");
 	exts.push_back(".txt"); exts.push_back(".TXT");
 	exts.push_back(".pcmap"); exts.push_back(".PCMAP");
-	common::CollectFiles2(exts, searchPath.c_str(), searchPath.c_str(), files);
+	ignores.push_back("capture");
+	ignores.push_back("share");
+	common::CollectFiles4(exts, searchPath.c_str(), searchPath.c_str(), ignores, files);
 	m_hierarchy = common::CreateFolderNode(files, true);
 
 	return true;

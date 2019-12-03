@@ -11,7 +11,7 @@ class cHierarchyView;
 class cPointCloudMap;
 
 enum eEditState {
-	VR360, Measure, Capture
+	VR360, Measure, Capture, Zoom
 };
 
 

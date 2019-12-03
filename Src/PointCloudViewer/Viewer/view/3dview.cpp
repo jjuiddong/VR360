@@ -208,18 +208,22 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			m_cube.Render(renderer);
 		}
 
-		RenderMarkup(renderer);
+		if (eEditState::Zoom != g_global->m_state)
+			RenderMarkup(renderer);
 
 		// render mouse point
-		const Ray ray = GetMainCamera().GetRay(m_mousePos.x, m_mousePos.y);
-		renderer.m_dbgLine.SetColor(cColor::RED);
-		renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
-		renderer.m_dbgLine.Render(renderer);
+		if (eEditState::Zoom != g_global->m_state)
+		{
+			const Ray ray = GetMainCamera().GetRay(m_mousePos.x, m_mousePos.y);
+			renderer.m_dbgLine.SetColor(cColor::RED);
+			renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
+			renderer.m_dbgLine.Render(renderer);
+		}
 
 		// Render Line Point to Information Window
 		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
 			g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
-		if (pin)
+		if (pin && (eEditState::Zoom != g_global->m_state))
 		{
 			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
 
@@ -248,7 +252,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			renderer.m_dbgLine.Render(renderer);
 		}
 
-		if (m_isShowMeasure)
+		if (m_isShowMeasure && (eEditState::Zoom != g_global->m_state))
 			RenderMeasure(renderer);
 		
 		if (0) // uv zoom image
@@ -261,6 +265,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 	}
 	m_renderTarget.End(renderer);
 
+	// capture vr360
 	if (g_global->m_state == eEditState::Capture)
 	{
 		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
@@ -539,6 +544,9 @@ void c3DView::RenderPopupmenu()
 // render point cloud memo
 void c3DView::RenderPcMemo()
 {
+	if (eEditState::Zoom == g_global->m_state)
+		return;
+
 	// Render Point Cloud Information Window
 	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
 		g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
@@ -1015,11 +1023,12 @@ void c3DView::OnWheelMove(const float delta, const POINT mousePt)
 	//const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
 	//Vector3 lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
 	//len = (ray.orig - lookAt).Length();
-
 	//const int lv = 10;// m_quadTree.GetLevel(len);
 	//const float zoomLen = min(len * 0.1f, (float)(2 << (16 - lv)));
-
 	//GetMainCamera().Zoom(ray.dir, (delta < 0) ? -zoomLen : zoomLen);
+
+	g_global->m_state = eEditState::Zoom;
+	GetMainCamera().MoveFront(delta*20.f);
 }
 
 

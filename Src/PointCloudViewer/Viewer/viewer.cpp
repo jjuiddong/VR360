@@ -348,6 +348,15 @@ void cViewer::OnEventProc(const sf::Event &evt)
 	switch (evt.type)
 	{
 	case sf::Event::KeyPressed:
+		if (sf::Keyboard::Escape == evt.key.cmd)
+		{
+			if (eEditState::Zoom == g_global->m_state)
+			{
+				g_global->m_state = eEditState::VR360;
+				g_global->m_3dView->m_camera.SetEyePos(Vector3(0, 0, 0));
+				g_global->m_3dView->m_isUpdatePcWindowPos = true;
+			}
+		}
 		//switch (evt.key.cmd)
 		//{
 		//case sf::Keyboard::Escape: close(); break;
