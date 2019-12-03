@@ -71,14 +71,6 @@ bool c3DView::Init(cRenderer &renderer)
 	);
 
 
-	const char* fileName = 
-		//"test6.jpg";
-		"workobj/1.bmp";
-		//"Big_ben_equirectangular.jpg";
-		//"J6tcu.png";
-
-	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(
-		renderer, fileName);
 	m_keyMap.Create(renderer, 0, 50, 200, 200
 		, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0));
 

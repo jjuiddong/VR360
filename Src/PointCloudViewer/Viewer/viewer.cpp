@@ -5,6 +5,8 @@
 #include "view/3dview.h"
 #include "view/infoview.h"
 #include "view/hierarchyview.h"
+#include <chrono>
+#include <ctime>
 
 
 class cViewer : public framework::cGameMain2
@@ -12,14 +14,14 @@ class cViewer : public framework::cGameMain2
 public:
 	cViewer();
 	virtual ~cViewer();
-
 	virtual bool OnInit() override;
 	virtual void OnUpdate(const float deltaSeconds) override;
 	virtual void OnRender(const float deltaSeconds) override;
 	virtual void OnRenderMenuBar() override;
 	virtual void OnRenderTitleBar() override;
 	virtual void OnEventProc(const sf::Event &evt) override;
-
+protected:
+	bool ReadRegistry();
 public:
 	graphic::cTexture *m_titleIconTex; // 현대건설 아이콘
 	graphic::cTexture *m_projectIconTex; // 프로젝트 아이콘
@@ -137,6 +139,12 @@ bool cViewer::OnInit()
 	//m_gui.SetStyleColorsDark();
 	m_gui.SetStyleColorsLight();
 
+	if (!ReadRegistry())
+	{
+		dbg::Log("finish trial version\n");
+		return false;
+	}
+
 	return true;
 }
 
@@ -151,6 +159,157 @@ void cViewer::OnUpdate(const float deltaSeconds)
 
 void cViewer::OnRender(const float deltaSeconds)
 {
+}
+
+
+// registry read/write
+// key : CurrentUser//Software//vr360//abc
+// 사용기간이 30일 지나면 프로그램이 실행안되게하는 코드 추가
+//
+// 1. registry key가 없으면 추가하고, 그날 날짜를 저장한다.
+//		format: 0xFF020191203 -> 20191203 ascii hexa 코드로 저장
+// 2. 프로그램이 실행될 때마다 registry key 의 날짜를 검사해서 30일이 
+//	  지나면 0xFF1~ 형태로 저장한다.
+// 3. 이후 0xFF1로 값이 저장 되어있으면 프로그램 종료.
+// 4. 0xFF0~ 형태이더라도 30일이 경과하면 프로그램 종료.
+// 5. 프로그램을 새로 설치하더라도 registry key는 그대로 유지되기 때문에
+//    프로그램이 실행 안됨
+bool cViewer::ReadRegistry()
+{
+	bool reval = true;
+
+	// open vr360 Regstry Key
+	HKEY hKey;
+	LONG lResult = RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\vr360",
+		0, KEY_ALL_ACCESS, &hKey);
+
+	if (lResult != ERROR_SUCCESS) // not found registry key?
+	{
+		// make VR360 registry key
+		DWORD dwDesc;
+		lResult = RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\vr360", 0
+			, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL
+			, &hKey, &dwDesc);
+		if (lResult == ERROR_SUCCESS)
+		{
+			// store current date
+			const string date = common::GetCurrentDateTime4();
+			string date2 = "0xFF1";
+			for (uint i = 0; i < date.length(); ++i)
+			{
+				char tmp[4];
+				sprintf_s(tmp, "%2X", (int)date[i]);
+				date2 += tmp;
+			}
+			RegSetValueExA(hKey, "abc", 0, REG_SZ, (BYTE*)date2.c_str(), date2.length());
+		}
+		RegCloseKey(hKey);
+	}
+	else // found!!
+	{
+		// compare date and current
+		char buffer[100];
+		ZeroMemory(buffer, sizeof(buffer));
+		DWORD dwType;
+		DWORD dwBytes = sizeof(buffer);
+		lResult = RegQueryValueExA(hKey, "abc", 0, &dwType, (LPBYTE)buffer, &dwBytes);
+		if (lResult == ERROR_SUCCESS)
+		{
+			// 0xFF0~~
+			if (buffer[4] != '1')
+			{
+				reval = false; // fail
+			}
+			else if ( (buffer[0] == '0') 
+				&& (buffer[1] == 'x')
+				&& (buffer[2] == 'F')
+				&& (buffer[3] == 'F')
+				&& (buffer[4] == '1')
+				)
+			{
+				int year0, year1, year2, year3;
+				int month0, month1;
+				int day0, day1;
+				const int len = sscanf_s(buffer, "0xFF1%2X%2X%2X%2X%2X%2X%2X%2X"
+					, &year0, &year1, &year2, &year3
+					, &month0, &month1
+					, &day0, &day1);
+				if (len == 8)
+				{
+					// registry key date
+					string date;
+					date += (char)year0;
+					date += (char)year1;
+					date += (char)year2;
+					date += (char)year3;
+					const int year = atoi(date.c_str());
+					date.clear();
+
+					date += (char)month0;
+					date += (char)month1;
+					const int month = atoi(date.c_str());
+					date.clear();
+
+					date += (char)day0;
+					date += (char)day1;
+					const int day = atoi(date.c_str());
+					date.clear();
+
+					// compare date
+					const string curDate = common::GetCurrentDateTime4();
+					date += curDate[0];
+					date += curDate[1];
+					date += curDate[2];
+					date += curDate[3];
+					const  int cyear = atoi(date.c_str());
+					date.clear();
+
+					date += curDate[4];
+					date += curDate[5];
+					const  int cmonth = atoi(date.c_str());
+					date.clear();
+
+					date += curDate[6];
+					date += curDate[7];
+					const  int cday = atoi(date.c_str());
+					date.clear();
+
+					const int duration = common::DateCompare2(cyear, cmonth, cday
+						, year, month, day);
+					if (duration > 30)
+					{
+						// store 0xFF0~~
+						const string date = common::format("%4d%2d%2d", year, month, day);
+						string date2 = "0xFF0";
+						for (uint i = 0; i < date.length(); ++i)
+						{
+							char tmp[4];
+							sprintf_s(tmp, "%2X", (int)date[i]);
+							date2 += tmp;
+						}
+						RegSetValueExA(hKey, "abc", 0, REG_SZ, (BYTE*)date2.c_str(), date2.length());
+						reval = false; // fail
+					}
+				}
+				else
+				{
+					reval = false; // fail
+				}
+			}
+			else
+			{
+				reval = false; // fail
+			}
+		}
+		else
+		{
+			reval = false; // fail
+		}
+
+		RegCloseKey(hKey);
+	}
+
+	return reval;
 }
 
 
