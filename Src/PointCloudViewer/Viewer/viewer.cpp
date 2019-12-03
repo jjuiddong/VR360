@@ -163,7 +163,7 @@ void cViewer::OnRender(const float deltaSeconds)
 
 
 // registry read/write
-// key : CurrentUser//Software//vr360//abc
+// key : CurrentUser//Software//VR360//abc
 // 사용기간이 30일 지나면 프로그램이 실행안되게하는 코드 추가
 //
 // 1. registry key가 없으면 추가하고, 그날 날짜를 저장한다.
@@ -178,16 +178,38 @@ bool cViewer::ReadRegistry()
 {
 	bool reval = true;
 
-	// open vr360 Regstry Key
+	// open VR360 Regstry Key
 	HKEY hKey;
-	LONG lResult = RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\vr360",
-		0, KEY_ALL_ACCESS, &hKey);
+	LONG lResult = RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\VR360"
+		, 0, KEY_ALL_ACCESS, &hKey);
 
 	if (lResult != ERROR_SUCCESS) // not found registry key?
 	{
+		// check GVR registry key
+		HKEY hKey0;
+		lResult = RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\GVR"
+			, 0, KEY_ALL_ACCESS, &hKey0);
+		if (lResult == ERROR_SUCCESS)
+		{
+			// 이미 Setup과정을 거친 프로그램일 경우, 새 Registry Key를 생성하는 
+			// 과정은 취소된다.
+			RegCloseKey(hKey0);
+			return false;
+		}
+		else
+		{
+			DWORD dwDesc;
+			lResult = RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\GVR", 0
+				, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL
+				, &hKey0, &dwDesc);
+			if (lResult != ERROR_SUCCESS)
+				return false; // fail
+			RegCloseKey(hKey0);
+		}
+
 		// make VR360 registry key
 		DWORD dwDesc;
-		lResult = RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\vr360", 0
+		lResult = RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\VR360", 0
 			, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL
 			, &hKey, &dwDesc);
 		if (lResult == ERROR_SUCCESS)
@@ -202,8 +224,12 @@ bool cViewer::ReadRegistry()
 				date2 += tmp;
 			}
 			RegSetValueExA(hKey, "abc", 0, REG_SZ, (BYTE*)date2.c_str(), date2.length());
+			RegCloseKey(hKey);
 		}
-		RegCloseKey(hKey);
+		else
+		{
+			reval = false; // fail
+		}
 	}
 	else // found!!
 	{
