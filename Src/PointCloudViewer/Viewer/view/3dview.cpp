@@ -14,8 +14,8 @@ c3DView::c3DView(const string &name)
 	, m_isShowWireframe(false)
 	, m_isShowTexture(true)
 	, m_isShowGridLine(false)
-	, m_isShowPointCloud1(false)
-	, m_isShowPointCloud2(false)
+	, m_isShowPointCloud(false)
+	, m_isShowPcMap(false)
 	, m_isShowPopupMenu(false)
 	, m_isBeginPopupMenu(false)
 	, m_isUpdatePcWindowPos(false)
@@ -171,7 +171,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 
 		const float tessScale = m_curPinInfo ? m_curPinInfo->tessScale : 0.02f;
 
-		if (m_isShowPointCloud1)
+		if (m_isShowPointCloud)
 		{
 			Transform tfm;
 			//tfm.scale = Vector3(-1, -1, 1);
@@ -180,14 +180,14 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			m_pointCloud.Render(renderer, tfm.GetMatrixXM());
 		}
 
-		if (m_isShowPointCloud2)
+		if (m_isShowPcMap)
 		{
 			Transform tfm;
 			//tfm.scale = Vector3(-1, -1, 1);
 			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
 			renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
-			m_pointCloud.SetShader(&m_pointShader);
-			m_pointCloud.RenderTessellation(renderer, 1, tfm.GetMatrixXM());
+			m_pcMapModel.SetShader(&m_pointShader);
+			m_pcMapModel.RenderTessellation(renderer, 1, tfm.GetMatrixXM());
 		}
 
 		{
@@ -278,7 +278,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			fileName += ".jpg";
 
 			if (S_OK == DirectX::SaveWICTextureToFile(renderer.m_devContext
-				, m_renderTarget.m_texture, GUID_ContainerFormatJpeg
+				, renderer.m_backBuffer, GUID_ContainerFormatJpeg
 				, common::str2wstr(fileName).c_str()))
 			{
 				StrPath path = fileName;
@@ -296,7 +296,7 @@ void c3DView::RenderMeasure(graphic::cRenderer &renderer)
 	RET(g_global->m_measures.empty());
 
 	float totLen = 0.f;
-	for (uint i = 1; i < g_global->m_measures.size(); ++i)
+	for (uint i = 1; i < g_global->m_measures.size(); i+=2)
 	{
 		const sMeasurePt &p0 = g_global->m_measures[i - 1];
 		const sMeasurePt &p1 = g_global->m_measures[i];
@@ -313,12 +313,11 @@ void c3DView::RenderMeasure(graphic::cRenderer &renderer)
 		tfm.scale = Vector3::Ones * 0.1f;
 
 		WStr128 text;
-		text.Format(L"%.1f", totLen);
+		text.Format(L"%.1f", len * 0.1f);
 		renderer.m_textMgr.AddTextRender(renderer, i, text.c_str()
 			, cColor::WHITE, cColor::BLACK, graphic::BILLBOARD_TYPE::ALL_AXIS
 			, tfm, true
 		);
-
 	}
 }
 
@@ -345,18 +344,18 @@ void c3DView::OnRender(const float deltaSeconds)
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		if (ImGui::Checkbox("Equirectangular", &m_isShowTexture))
-			m_isShowPointCloud1 = !m_isShowTexture;
+			m_isShowPointCloud = !m_isShowTexture;
 
 		//ImGui::SameLine();
 		//ImGui::Checkbox("Wireframe", &m_isShowWireframe);
 		//ImGui::SameLine();
 		//ImGui::Checkbox("GridLine", &m_isShowGridLine);
 		ImGui::SameLine();
-		if (ImGui::Checkbox("3D      ", &m_isShowPointCloud1))
-			m_isShowTexture = !m_isShowPointCloud1;
+		if (ImGui::Checkbox("3D      ", &m_isShowPointCloud))
+			m_isShowTexture = !m_isShowPointCloud;
 
 		ImGui::SameLine();
-		ImGui::Checkbox("PCMap", &m_isShowPointCloud2);
+		ImGui::Checkbox("PCMap", &m_isShowPcMap);
 		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
 	}
 	ImGui::End();
@@ -509,7 +508,7 @@ void c3DView::RenderPopupmenu()
 		{
 			for (auto &markup : g_global->m_markups)
 			{
-				if (ImGui::MenuItem(markup.name.c_str()))
+				if (ImGui::MenuItem(StrId(markup.name).utf8().c_str()))
 				{
 					// add markup
 					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
@@ -568,7 +567,7 @@ void c3DView::RenderPcMemo()
 
 		ImGui::PushID(pc);
 		bool isOpen = true;
-		if (ImGui::Begin(pc->name.c_str(), &isOpen, wndFlags))
+		if (ImGui::Begin(pc->name.utf8().c_str(), &isOpen, wndFlags))
 		{
 			bool isStoreWndPos = false;
 
@@ -604,7 +603,7 @@ void c3DView::RenderPcMemo()
 						common::tokenizer(p->desc.c_str(), "\n", "", toks);
 						if (!toks.empty() && (p->name != toks[0]))
 						{
-							p->name = toks[0];
+							p->name = StrId(toks[0]).ansi();
 							isUpdateWindowPos = true;
 							isStoreWndPos = true;
 							break;
@@ -643,7 +642,7 @@ void c3DView::RenderPcMemo()
 		if (!isOpen)
 		{
 			Str128 msg;
-			msg.Format("Remove Point [ %s ]?", pc->name.c_str());
+			msg.Format("[ %s ] 메모를 제거하시겠습니까?", pc->name.c_str());
 			if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
 				, msg.c_str(), "CONFIRM", MB_YESNO))
 			{
@@ -722,7 +721,7 @@ void c3DView::RenderMarkup(graphic::cRenderer &renderer)
 
 		Transform tfm;
 		tfm.pos = pc->pos;
-		tfm.scale = Vector3::Ones * 0.1f;
+		tfm.scale = Vector3::Ones * 0.25f;
 		m_markup.m_transform = tfm;
 		m_markup.m_texture = g_global->m_markups[pc->markup].icon;
 		m_markup.Render(renderer);
@@ -802,9 +801,11 @@ bool c3DView::JumpPin(const string &pinName)
 	g_global->m_cPinStr = pinName;
 
 	// update window title name
-	g_application->m_title.Format("[%s]-[%s]-[%s]-[%s]"
+	common::Str128 title;
+	title.Format("[%s]-[%s]-[%s]-[%s]"
 		, g_global->m_pcDb.m_project.name.c_str()
 		, g_global->m_cDateStr.c_str(), g_global->m_cFloorStr.c_str(), pinName.c_str());
+	g_application->m_title = title.utf8();
 
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
 		g_global->m_cDateStr, g_global->m_cFloorStr);
@@ -823,14 +824,13 @@ bool c3DView::JumpPin(const string &pinName)
 		m_pointCloud.Create(GetRenderer(), common::GenerateId(), pin->pc3dFileName);
 
 	// load point cloud map file
-	if (pin->pc3dFileName.empty())
 	{
 		StrPath pcMapFileName = StrPath(pin->pcTextureFileName).GetFileNameExceptExt2();
 		pcMapFileName += ".pcmap";
 		if (g_global->LoadPCMap(pcMapFileName))
 		{
 			// load point cloud vertex
-			m_pointCloud.Create(GetRenderer(), common::GenerateId(), pcMapFileName);
+			m_pcMapModel.Create(GetRenderer(), common::GenerateId(), pcMapFileName);
 		}
 	}
 
@@ -862,7 +862,7 @@ bool c3DView::MakeShareFile()
 	}
 
 	const string dateTimeStr = common::GetCurrentDateTime();
-	
+
 	// 공유용 폴더를 하나 생성하고, (project dir/share/today date/)
 	// 공유할 파일만 공유폴더에 복사한다.
 	// keymap, vr360 경로 정보를 바뀐 경로로 수정한다.
@@ -974,14 +974,15 @@ bool c3DView::MakeShareFile()
 	}//~dates
 
 
-	cPointCloudDB pcDb;
-	pcDb.m_project = shareProj;
-
 	string dstFileName;
 	dstFileName = shareProj.dir.c_str();
 	dstFileName += "share";
 	dstFileName += string("\\") + dateTimeStr + "\\" + "share_" + shareProj.name.c_str();
 	dstFileName += ".prj";
+
+	cPointCloudDB pcDb;
+	pcDb.m_project = shareProj;
+	pcDb.m_project.dir = shareProj.dir + "share\\" + dateTimeStr; // update project directory
 	if (pcDb.Write(dstFileName))
 	{
 		Str128 text;

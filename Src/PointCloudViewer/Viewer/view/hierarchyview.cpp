@@ -95,6 +95,7 @@ bool cHierarchyView::NewProject()
 	m_selDate = nullptr;
 	m_selFloor = nullptr;
 	m_selPin = nullptr;
+	m_keymapTexture = nullptr;
 
 	// get current document directory path
 	char my_documents[MAX_PATH];
@@ -121,8 +122,9 @@ bool cHierarchyView::OpenProject()
 		{
 			UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
 
-			g_application->m_title.Format("[%s]"
-				, g_global->m_pcDb.m_project.name.c_str());
+			common::Str128 title;
+			title.Format("[%s]", g_global->m_pcDb.m_project.name.c_str());
+			g_application->m_title = title.utf8();
 		}
 		else
 		{
@@ -174,6 +176,7 @@ bool cHierarchyView::ProjectSetting()
 		m_selDate = nullptr;
 		m_selFloor = nullptr;
 		m_selPin = nullptr;
+		m_keymapTexture = nullptr;
 
 		m_isOpenNewProj = true;
 		m_projEditMode = eProjectEditMode::Modify;
@@ -195,14 +198,6 @@ bool cHierarchyView::RenderNewProjectDlg()
 		| ImGuiWindowFlags_NoResize
 		;
 
-	// change background color (default window too transparent)
-	//const ImVec4 tc = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-	//Vector4 tc2(tc.x, tc.y, tc.z, tc.w);
-	//Vector4 tc3 = tc2 * 1.4f;
-	//tc3.w = 0.98f;
-	//ImVec4 bgCol = *(ImVec4*)&tc3;
-	//ImGui::PushStyleColor(ImGuiCol_WindowBg, bgCol);
-
 	const sf::Vector2u psize = m_owner->getSize();
 	const ImVec2 size(500, 250);
 	const ImVec2 pos(psize.x / 2.f - size.x / 2.f
@@ -218,12 +213,16 @@ bool cHierarchyView::RenderNewProjectDlg()
 		// 프로젝트명 설정
 		ImGui::TextUnformatted("Project Name :        ");
 		ImGui::SameLine();
-		ImGui::InputText("##name", proj.name.m_str, proj.name.SIZE);
-
+		StrId name = proj.name.utf8();
+		if (ImGui::InputText("##name", name.m_str, name.SIZE))
+			proj.name = name.ansi();
+		
 		// 프로젝트 디렉토리 설정
 		ImGui::TextUnformatted("Directory Path :       ");
 		ImGui::SameLine();
-		ImGui::InputText("##directory", proj.dir.m_str, proj.dir.SIZE);
+		StrPath dir = proj.dir.utf8();
+		if (ImGui::InputText("##directory", dir.m_str, dir.SIZE))
+			proj.dir = dir.ansi();
 
 		ImGui::PushID((int)proj.dir.m_str);
 		ImGui::SameLine();
@@ -298,6 +297,8 @@ bool cHierarchyView::RenderNewProjectDlg()
 								, "Error!! New Project File (Internal Error)", "ERROR"
 								, MB_OK | MB_ICONERROR);
 						}
+
+						UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
 					}
 					else
 					{
@@ -331,6 +332,8 @@ bool cHierarchyView::RenderNewProjectDlg()
 							, "Error!! Reed Project File (Internal Error)", "ERROR"
 							, MB_OK | MB_ICONERROR);
 					}
+
+					UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
 				}
 				else
 				{
@@ -483,6 +486,7 @@ bool cHierarchyView::RenderEditPinDlg()
 		m_selDate = nullptr;
 		m_selFloor = nullptr;
 		m_selPin = nullptr;
+		m_keymapTexture = nullptr;
 	}
 
 	return open;
@@ -493,7 +497,7 @@ bool cHierarchyView::RenderDateEdit()
 {
 	cPointCloudDB::sProject &proj = m_editPc.m_project;
 
-	const StrId selDateName = (m_selDate) ? m_selDate->name : "";
+	const StrId selDateName = (m_selDate) ? m_selDate->name.utf8() : "";
 
 	ImGui::TextUnformatted("Select Date :           ");
 	ImGui::SameLine();
@@ -502,12 +506,16 @@ bool cHierarchyView::RenderDateEdit()
 	{
 		for (auto &date : proj.dates)
 		{
-			if (ImGui::Selectable(date->name.c_str()))
+			if (ImGui::Selectable(date->name.utf8().c_str()))
 			{
 				m_selDate = date;
 				m_selFloor = (!date->floors.empty()) ?
 					date->floors[0] : nullptr;
 				m_selPin = nullptr;
+
+				if (m_selFloor)
+					m_keymapTexture = graphic::cResourceManager::Get()->LoadTexture(
+						GetRenderer(), m_selFloor->keymapFileName);
 			}
 		}
 		ImGui::EndCombo();
@@ -515,14 +523,11 @@ bool cHierarchyView::RenderDateEdit()
 	ImGui::PopItemWidth();
 
 	ImGui::SameLine();
-	//ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.6f, 0.1f, 1.f));
-	//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.8f, 0.1f, 1.f));
-	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.2f, 0.1f, 1.f));
 	ImGui::PushID((int)m_selDate + 1);
-	if (ImGui::Button("Add"))
+	if (ImGui::Button("..."))
 	{
 		const StrPath path = common::BrowseFolder(m_owner->getSystemHandle()
-			, "Select Project Directory"
+			, "Select Date Directory"
 			, proj.dir.c_str());
 		if (!path.empty())
 		{
@@ -532,10 +537,10 @@ bool cHierarchyView::RenderDateEdit()
 			m_selDate = date;
 			m_selFloor = nullptr;
 			m_selPin = nullptr;
+			m_keymapTexture = nullptr;
 		}
 	}
 	ImGui::PopID();
-	//ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
@@ -546,8 +551,11 @@ bool cHierarchyView::RenderDateEdit()
 	{
 		if (m_selDate)
 		{
+			common::Str128 text;
+			text.Format("[%s] 를 제거하시겠습니까?", m_selDate->name.c_str());
+
 			if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-				, "Date를 제거하시겠습니까?", "CONFIRM"
+				, text.c_str(), "CONFIRM"
 				, MB_YESNO | MB_ICONQUESTION))
 			{
 				m_editPc.RemoveDate(m_selDate->name);
@@ -555,6 +563,7 @@ bool cHierarchyView::RenderDateEdit()
 					proj.dates[0] : nullptr;
 				m_selFloor = nullptr;
 				m_selPin = nullptr;
+				m_keymapTexture = nullptr;
 			}
 		}
 	}
@@ -567,7 +576,8 @@ bool cHierarchyView::RenderDateEdit()
 
 bool cHierarchyView::RenderFloorEdit()
 {
-	const StrId selFloorName = (m_selFloor) ? m_selFloor->name : "";
+	cPointCloudDB::sProject &proj = m_editPc.m_project;
+	const StrId selFloorName = (m_selFloor) ? m_selFloor->name.utf8() : "";
 
 	ImGui::TextUnformatted("Select Floor :           ");
 	ImGui::SameLine();
@@ -578,9 +588,13 @@ bool cHierarchyView::RenderFloorEdit()
 		{
 			for (auto &floor : m_selDate->floors)
 			{
-				if (ImGui::Selectable(floor->name.c_str()))
+				if (ImGui::Selectable(floor->name.utf8().c_str()))
 				{
 					m_selFloor = floor;
+					m_selPin = nullptr;
+
+					m_keymapTexture = graphic::cResourceManager::Get()->LoadTexture(
+						GetRenderer(), floor->keymapFileName);
 				}
 			}
 		}
@@ -589,23 +603,24 @@ bool cHierarchyView::RenderFloorEdit()
 	ImGui::PopItemWidth();
 
 	ImGui::SameLine();
-	//ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.6f, 0.1f, 1.f));
-	//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.8f, 0.1f, 1.f));
-	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.2f, 0.1f, 1.f));
 	ImGui::PushID((int)m_selFloor + 1);
-	if (ImGui::Button("Add"))
+	if (ImGui::Button("..."))
 	{
-		if (m_selDate)
+		const StrPath path = common::BrowseFolder(m_owner->getSystemHandle()
+			, "Select Floor Directory"
+			, proj.dir.c_str());
+		if (!path.empty() && m_selDate)
 		{
 			cPointCloudDB::sFloor *floor = new cPointCloudDB::sFloor;
-			floor->name.Format("%dF", m_selDate->floors.size() + 1);
+			floor->name = path.GetFileName();
 			floor->keymapFileName = (m_selFloor) ? m_selFloor->keymapFileName : "";
 			m_selDate->floors.push_back(floor);
 			m_selFloor = floor;
+			m_selPin = nullptr;
+			m_keymapTexture = nullptr;
 		}
 	}
 	ImGui::PopID();
-	//ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
@@ -616,8 +631,11 @@ bool cHierarchyView::RenderFloorEdit()
 	{
 		if (m_selFloor)
 		{
+			common::Str128 text;
+			text.Format("[%s] 를 제거하시겠습니까?", m_selFloor->name.c_str());
+
 			if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-				, "Floor를 제거하시겠습니까?", "CONFIRM"
+				, text.c_str(), "CONFIRM"
 				, MB_YESNO | MB_ICONQUESTION))
 			{
 				if (m_selDate)
@@ -635,16 +653,15 @@ bool cHierarchyView::RenderFloorEdit()
 
 	if (m_selFloor)
 	{
-		ImGui::TextUnformatted("Edit Floor Name :    ");
-		ImGui::SameLine();
-		ImGui::InputText("##floor name", m_selFloor->name.m_str
-			, m_selFloor->name.SIZE);
-
 		// 도면 파일명 설정
 		ImGui::TextUnformatted("KeyMap FileName : ");
 		ImGui::SameLine();
-		ImGui::InputText("##keymap", m_selFloor->keymapFileName.m_str
-			, m_selFloor->keymapFileName.SIZE);
+		StrPath keymapFileName = m_selFloor->keymapFileName.utf8();
+		if (ImGui::InputText("##keymap", keymapFileName.m_str
+			, keymapFileName.SIZE))
+		{
+			m_selFloor->keymapFileName = keymapFileName.ansi();
+		}
 
 		ImGui::PushID((int)m_selFloor->keymapFileName.c_str());
 		ImGui::SameLine();
@@ -656,7 +673,6 @@ bool cHierarchyView::RenderFloorEdit()
 			if (!fileName.empty())
 			{
 				m_selFloor->keymapFileName = fileName;
-
 				m_keymapTexture = graphic::cResourceManager::Get()->LoadTexture(
 					GetRenderer(), fileName);
 			}
@@ -735,31 +751,22 @@ bool cHierarchyView::RenderPinEdit()
 		{
 			ImGui::Spacing();
 
-			ImGui::TextUnformatted("Name :                  ");
+			ImGui::TextUnformatted("Name :                   ");
 			ImGui::SameLine();
-			ImGui::InputText("##name", m_selPin->name.m_str, m_selPin->name.SIZE);
+			StrId name = m_selPin->name.utf8();
+			if (ImGui::InputText("##name", name.m_str, name.SIZE))
+				m_selPin->name = name.ansi();
 
-			ImGui::TextUnformatted("PCD FileName :     ");
+			ImGui::TextUnformatted("Image FileName :  ");
 			ImGui::SameLine();
-			ImGui::InputText("##pcd", m_selPin->pc3dFileName.m_str, m_selPin->pc3dFileName.SIZE);
-
-			ImGui::PushID((int)m_selPin->pc3dFileName.m_str);
-			ImGui::SameLine();
-			if (ImGui::Button("..."))
+			StrPath pcTextureFileName = m_selPin->pcTextureFileName.utf8();
+			if (ImGui::InputText("##texture", pcTextureFileName.m_str, pcTextureFileName.SIZE))
 			{
-				const StrPath fileName = common::OpenFileDialog(m_owner->getSystemHandle()
-					, { {L"pcd File (*.obj)", L"*.obj"}
-						, {L"All File (*.*)", L"*.*"} });
-				if (!fileName.empty())
-				{
-					m_selPin->pc3dFileName = fileName;
-				}
+				const StrPath fileName = pcTextureFileName.ansi();
+				m_selPin->pcTextureFileName = fileName;
+				m_selPin->pc3dFileName = fileName.GetFileNameExceptExt2();
+				m_selPin->pc3dFileName += ".obj";
 			}
-			ImGui::PopID();
-
-			ImGui::TextUnformatted("Texture FileName :");
-			ImGui::SameLine();
-			ImGui::InputText("##texture", m_selPin->pcTextureFileName.m_str, m_selPin->pcTextureFileName.SIZE);
 
 			ImGui::PushID((int)m_selPin->pcTextureFileName.m_str);
 			ImGui::SameLine();
@@ -771,6 +778,8 @@ bool cHierarchyView::RenderPinEdit()
 				if (!fileName.empty())
 				{
 					m_selPin->pcTextureFileName = fileName;
+					m_selPin->pc3dFileName = fileName.GetFileNameExceptExt2();
+					m_selPin->pc3dFileName += ".obj";
 				}
 			}
 			ImGui::PopID();
@@ -779,7 +788,7 @@ bool cHierarchyView::RenderPinEdit()
 			ImGui::SameLine();
 			ImGui::DragFloat2("##position", (float*)&m_selPin->keymapPos, 0.001f, 0.f, 1.f);
 
-			ImGui::TextUnformatted("point scale :           ");
+			ImGui::TextUnformatted("Point Scale :           ");
 			ImGui::SameLine();
 			ImGui::DragFloat("##tessScale", &m_selPin->tessScale, 0.0001f, 0.f, 10.f);
 		}
@@ -839,9 +848,10 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 		{
 			g_global->m_cDateStr = text.c_str();
 			g_global->m_cFloorStr.clear();
-			//g_application->m_title = text.c_str();
-			g_application->m_title.Format("[%s]-[%s]"
+			common::Str128 title;
+			title.Format("[%s]-[%s]"
 				, g_global->m_pcDb.m_project.name.c_str(), text.c_str());
+			g_application->m_title = title.utf8();
 			dateNode = kv.second;
 		}
 		if (isSelect)
@@ -866,13 +876,15 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 		if (ImGui::Selectable(text.utf8().c_str(), isSelect))
 		{
 			g_global->m_cFloorStr = text.c_str();
-			g_application->m_title.Format("[%s]-[%s]-[%s]"
+			common::Str128 title;
+			title.Format("[%s]-[%s]-[%s]"
 				, g_global->m_pcDb.m_project.name.c_str()
 				, g_global->m_cDateStr.c_str(), text.c_str());
+			g_application->m_title = title.utf8();
 			floorNode = kv.second;
 			isFloorClicked = true;
 		}
-		ImGui::Unindent(20);
+		ImGui::Unindent(45);
 		if (isSelect)
 			floorNode = kv.second;
 	}

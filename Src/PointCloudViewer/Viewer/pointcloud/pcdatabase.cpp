@@ -80,8 +80,10 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 		ptree::assoc_iterator itor0 = props.find("project");
 		if (props.not_found() != itor0)
 		{
-			m_project.name = itor0->second.get<string>("name", "project name");
-			m_project.dir = itor0->second.get<string>("path", "c:\\project\\");
+			StrId name = itor0->second.get<string>("name", "project name");
+			m_project.name = name.ansi();
+			StrPath dir = itor0->second.get<string>("path", "c:\\project\\");
+			m_project.dir = dir.ansi();
 
 			ptree::assoc_iterator itor1 = itor0->second.find("dates");
 			if (props.not_found() != itor1)
@@ -89,8 +91,8 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 				ptree &child_field0 = itor0->second.get_child("dates");
 				for (ptree::value_type &vt3 : child_field0)
 				{
-					const string dateName = vt3.second.get<string>("name");
-					sDate *date = AddDate(dateName);
+					const StrId dateName = vt3.second.get<string>("name");
+					sDate *date = AddDate(dateName.ansi());
 					if (!date)
 						throw std::exception();
 
@@ -100,13 +102,16 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 						ptree &child_field1 = vt3.second.get_child("floors");
 						for (ptree::value_type &vt0 : child_field1)
 						{
-							const string floorName = vt0.second.get<string>("name");
-							sFloor *floor = AddFloor(date, floorName);
+							const StrId floorName = vt0.second.get<string>("name");
+							sFloor *floor = AddFloor(date, floorName.ansi());
 							if (!floor)
 								throw std::exception();
 
-							floor->keymapFileName = vt0.second.get<string>(
+							StrPath keymapFileName = vt0.second.get<string>(
 								"keymap filename", "filename.jpg");
+							//floor->keymapFileName = keymapFileName.ansi();
+							StrPath keymapFileNameFullPath = dir.ansi() + keymapFileName.ansi();
+							floor->keymapFileName = keymapFileNameFullPath.GetFullFileName();
 
 							ptree::assoc_iterator itor3 = vt0.second.find("pins");
 							if (props.not_found() != itor3)
@@ -114,21 +119,27 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 								ptree &child_field2 = vt0.second.get_child("pins");
 								for (ptree::value_type &vt1 : child_field2)
 								{
-									const string name = vt1.second.get<string>("name");
-									const string fileName3d = vt1.second.get<string>("point cloud 3d filename", "");
-									const string textureFileName = vt1.second.get<string>("point cloud texture filename", "");
+									const StrId pinName = vt1.second.get<string>("name");
+									const StrPath fileName3d = vt1.second.get<string>("point cloud 3d filename", "");
+									const StrPath textureFileName = vt1.second.get<string>("point cloud texture filename", "");
 									const string posStr = vt1.second.get<string>("pos");
 									const Vector3 pos = ParseVector3(posStr);
 									const string keymapPosStr = vt1.second.get<string>("keymap pos");
 									const Vector2 kpos = ParseVector2(keymapPosStr);
 									const float tessScale = vt1.second.get<float>("tess scale", 0.02f);
 
-									sPin *pin = AddPin(floor, name, pos);
+									sPin *pin = AddPin(floor, pinName.ansi(), pos);
 									if (!pin)
 										continue;
 
-									pin->pc3dFileName = fileName3d;
-									pin->pcTextureFileName = textureFileName;
+									StrPath pc3dFileNameFullPath = dir.ansi() + fileName3d.ansi();
+									pin->pc3dFileName = pc3dFileNameFullPath.GetFullFileName();
+									//pin->pc3dFileName = fileName3d.ansi();
+
+									StrPath textureFileNameFullPath = dir.ansi() + textureFileName.ansi();
+									pin->pcTextureFileName = textureFileNameFullPath.GetFullFileName();
+									//pin->pcTextureFileName = textureFileName.ansi();
+
 									pin->keymapPos = kpos;
 									pin->tessScale = tessScale;
 
@@ -139,10 +150,12 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 										for (ptree::value_type &vt : child_field3)
 										{
 											sPCData pc;
-											pc.name = vt.second.get<string>("name");
+											StrId name = vt.second.get<string>("name");
+											pc.name = name.ansi();
 											const string type = vt.second.get<string>("type");
 											pc.type = (type == "MEMO") ? sPCData::MEMO : sPCData::MARKUP;
-											pc.markup = eMarkup::FromString(vt.second.get<string>("markup"));
+											const StrId markup = vt.second.get<string>("markup");
+											pc.markup = eMarkup::FromString(markup.ansi().c_str());
 
 											const string posStr = vt.second.get<string>("pos", "");
 											pc.pos = ParseVector3(posStr);
@@ -160,7 +173,7 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 
 											pc.desc = vt.second.get<string>("description");
 
-											AddData(floor, name, pc);
+											AddData(floor, pinName.ansi(), pc);
 										} //~points
 									}//find points
 								} //~pins
@@ -191,29 +204,34 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 		ptree props;
 
 		ptree proj;
-		proj.put("name", m_project.name.c_str());
-		proj.put("path", m_project.dir.c_str());
+		proj.put("name", m_project.name.utf8().c_str());
+		proj.put("path", m_project.dir.utf8().c_str());
 
 		ptree dates;
 		for (auto &date : m_project.dates)
 		{
 			ptree d;
-			d.put("name", date->name.c_str());
+			d.put("name", date->name.utf8().c_str());
 
 			ptree floors;
 			for (auto &floor : date->floors)
 			{
 				ptree fl;
-				fl.put("name", floor->name.c_str());
-				fl.put("keymap filename", floor->keymapFileName.c_str());
+				fl.put("name", floor->name.utf8().c_str());
+
+				StrPath keymapFileName = common::RelativePathTo(m_project.dir, floor->keymapFileName);
+				fl.put("keymap filename", keymapFileName.utf8().c_str());
 
 				ptree pins;
 				for (auto &pin : floor->pins)
 				{
 					ptree c;
-					c.put("name", pin->name.c_str());
-					c.put("point cloud 3d filename", pin->pc3dFileName.c_str());
-					c.put("point cloud texture filename", pin->pcTextureFileName.c_str());
+					c.put("name", pin->name.utf8().c_str());
+
+					StrPath pc3dFileName = common::RelativePathTo(m_project.dir, pin->pc3dFileName);
+					c.put("point cloud 3d filename", pc3dFileName.utf8().c_str());
+					StrPath pcTextureFileName = common::RelativePathTo(m_project.dir, pin->pcTextureFileName);
+					c.put("point cloud texture filename", pcTextureFileName.utf8().c_str());
 					common::Str128 text;
 					text.Format("%f %f %f", pin->pos.x, pin->pos.y, pin->pos.z);
 					c.put("pos", text.c_str());
@@ -227,8 +245,8 @@ bool cPointCloudDB::Write(const StrPath &fileName)
 						ptree z;
 
 						z.put("type", (pc->type == sPCData::MEMO) ? "MEMO" : "MARKUP");
-						z.put("name", pc->name.c_str());
-						z.put("markup", eMarkup::ToString(pc->markup));
+						z.put("name", pc->name.utf8().c_str());
+						z.put("markup", StrId(eMarkup::ToString(pc->markup)).utf8().c_str());
 
 						common::Str128 text;
 						text.Format("%f %f %f", pc->pos.x, pc->pos.y, pc->pos.z);

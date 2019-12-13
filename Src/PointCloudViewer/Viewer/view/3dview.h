@@ -42,6 +42,7 @@ protected:
 public:
 	graphic::cSphere2 m_sphere;
 	graphic::cModel m_pointCloud;
+	graphic::cModel m_pcMapModel;
 	graphic::cGridLine m_gridLine;
 	graphic::cCube m_cube;
 	graphic::cQuad2D m_quad1;
@@ -71,8 +72,8 @@ public:
 	bool m_isShowWireframe;
 	bool m_isShowTexture;
 	bool m_isShowGridLine;
-	bool m_isShowPointCloud1; // point cloud
-	bool m_isShowPointCloud2; // tessellation
+	bool m_isShowPointCloud; // point cloud
+	bool m_isShowPcMap; // tessellation
 	bool m_isShowPopupMenu;
 	bool m_isBeginPopupMenu;
 	bool m_isShowKeymap;

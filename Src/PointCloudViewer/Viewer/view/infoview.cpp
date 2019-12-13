@@ -165,8 +165,8 @@ void cInfoView::RenderMarkupList()
 				for (auto &pin : floor->pins)
 				{
 					//ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-					ImGui::PushID(pin->name.c_str());
-					if (ImGui::TreeNode(pin->name.c_str()))
+					ImGui::PushID((int)pin->name.c_str());
+					if (ImGui::TreeNode(pin->name.utf8().c_str()))
 					{
 						for (auto &pc : pin->pcds)
 						{
@@ -178,7 +178,7 @@ void cInfoView::RenderMarkupList()
 								continue;
 
 							ImGui::PushID((int)pc->name.c_str());
-							if (ImGui::TreeNode(pc->name.c_str()))
+							if (ImGui::TreeNode(pc->name.utf8().c_str()))
 							{
 								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
 								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
@@ -279,21 +279,34 @@ void cInfoView::RenderMeasure()
 		{
 			const sMeasurePt &p0 = g_global->m_measures[i];
 
-			ImGui::PushID((int)&p0);
-			if (ImGui::Button("X"))
-				rmPt = (int)i;
-			ImGui::PopID();
+			float indent = 0;
+			if ((i % 2) == 0)
+			{
+				ImGui::PushID((int)&p0);
+				if (ImGui::Button("X"))
+					rmPt = (int)i;
+				ImGui::PopID();
+				ImGui::SameLine();
+			}
+			else
+			{
+				indent = 23;
+			}
 
 			common::Str128 text;
 			text.Format("%.1f, %.1f, %.1f", p0.rpos.x, p0.rpos.y, p0.rpos.z);
-			ImGui::SameLine();
+			ImGui::Indent(indent);
 			ImGui::Selectable(text.c_str());
+			ImGui::Unindent(indent);
 		}
 
 		// remove measure point
 		if (rmPt >= 0)
 		{
+			// remove pair point
 			common::rotatepopvector(g_global->m_measures, rmPt);
+			if ((int)g_global->m_measures.size() > rmPt)
+				common::rotatepopvector(g_global->m_measures, rmPt);
 		}
 
 		ImGui::Spacing();
@@ -361,7 +374,7 @@ void cInfoView::RenderPopupmenu()
 		{
 			for (auto &markup : g_global->m_markups)
 			{
-				if (ImGui::MenuItem(markup.name.c_str()))
+				if (ImGui::MenuItem(StrId(markup.name).utf8().c_str()))
 				{
 					// add markup
 					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
@@ -406,7 +419,8 @@ void cInfoView::RenderPinHierarchy()
 				for (auto &pin : floor->pins)
 				{
 					ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-					if (ImGui::TreeNode(pin->name.c_str()))
+					ImGui::PushID((int)pin->name.c_str() + 10000);
+					if (ImGui::TreeNode(pin->name.utf8().c_str()))
 					{
 						for (auto &pc : pin->pcds)
 						{
@@ -414,7 +428,7 @@ void cInfoView::RenderPinHierarchy()
 								continue;
 
 							ImGui::PushID((int)pc->name.c_str());
-							if (ImGui::TreeNode(pc->name.c_str()))
+							if (ImGui::TreeNode(pc->name.utf8().c_str()))
 							{
 								ImGui::PushID(pc + 1);
 								common::Str128 text;
@@ -449,6 +463,7 @@ void cInfoView::RenderPinHierarchy()
 
 						ImGui::TreePop();
 					}//~pin tree
+					ImGui::PopID();
 				}//~pins
 			} //~floors
 		}//~dates

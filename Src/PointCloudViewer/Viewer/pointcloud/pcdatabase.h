@@ -42,7 +42,7 @@ public:
 		Vector2 uvpos; // equirectangular position (uv coordinate)
 		Vector3 wndPos; // information window poisition (ui)
 		Vector3 wndSize; // information window size (ui) (z not use)
-		common::Str256 desc; // description
+		common::Str256 desc; // description (utf8 format)
 	};
 
 	struct sPin
