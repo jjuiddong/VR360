@@ -342,7 +342,7 @@ void c3DView::OnRender(const float deltaSeconds)
 	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 100.f));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		if (ImGui::Checkbox("Equirectangular", &m_isShowTexture))
 			m_isShowPointCloud = !m_isShowTexture;
 
@@ -354,9 +354,9 @@ void c3DView::OnRender(const float deltaSeconds)
 		if (ImGui::Checkbox("3D      ", &m_isShowPointCloud))
 			m_isShowTexture = !m_isShowPointCloud;
 
-		ImGui::SameLine();
-		ImGui::Checkbox("PCMap", &m_isShowPcMap);
-		ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
+		//ImGui::SameLine();
+		//ImGui::Checkbox("PCMap", &m_isShowPcMap);
+		//ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
 	}
 	ImGui::End();
 	ImGui::PopStyleColor();
@@ -818,6 +818,15 @@ bool c3DView::JumpPin(const string &pinName)
 	// load equirectangular file
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(GetRenderer()
 		, pin->pcTextureFileName);
+	if ((!m_sphere.m_texture)
+		|| ((m_sphere.m_texture) && (m_sphere.m_texture->m_fileName.find("white.dds"))))
+	{
+		Str128 msg;
+		msg.Format("에러 발생!!\n[ %s ] 이미지 파일을 찾지 못했습니다.\nProject Setting에서 파일명을 확인하세요."
+			, pin->pcTextureFileName.c_str());
+		::MessageBoxA(m_owner->getSystemHandle(), msg.c_str(), "ERROR"
+			, MB_OK | MB_ICONERROR);
+	}
 
 	// load 3d point cloud file
 	if (!pin->pc3dFileName.empty())

@@ -176,6 +176,7 @@ void cViewer::OnRender(const float deltaSeconds)
 //    프로그램이 실행 안됨
 bool cViewer::ReadRegistry()
 {
+	const int DURATION = 90;
 	bool reval = true;
 
 	// open VR360 Regstry Key
@@ -302,7 +303,7 @@ bool cViewer::ReadRegistry()
 
 					const int duration = common::DateCompare2(cyear, cmonth, cday
 						, year, month, day);
-					if (duration > 30)
+					if (duration > DURATION)
 					{
 						// store 0xFF0~~
 						const string date = common::format("%4d%2d%2d", year, month, day);
@@ -540,6 +541,10 @@ void cViewer::OnEventProc(const sf::Event &evt)
 				g_global->m_state = eEditState::VR360;
 				g_global->m_3dView->m_camera.SetEyePos(Vector3(0, 0, 0));
 				g_global->m_3dView->m_isUpdatePcWindowPos = true;
+			}
+			else if (eEditState::Measure == g_global->m_state)
+			{
+				g_global->m_state = eEditState::VR360;
 			}
 		}
 		//switch (evt.key.cmd)

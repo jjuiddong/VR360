@@ -104,7 +104,7 @@ void cInfoView::OnRender(const float deltaSeconds)
 void cInfoView::RenderMarkupList()
 {
 	static const char *totalStr = u8"---- 전체 ----";
-	static const char *prevStr = totalStr;
+	static StrId prevStr = totalStr;
 	static eMarkup::Enum sortType = eMarkup::None;
 
 	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
@@ -121,6 +121,7 @@ void cInfoView::RenderMarkupList()
 		if (ImGui::ImageButton(m_markupTex->m_texSRV, m_markupBtnSize))
 		{
 			g_global->m_3dView->m_pointCloudPos = g_global->m_3dView->m_pickPos;
+			g_global->m_state = eEditState::VR360;
 			m_isShowPopupMenu = true;
 		}
 		ImGui::PopStyleColor();
@@ -135,7 +136,7 @@ void cInfoView::RenderMarkupList()
 		ImGui::Text(u8"정렬:");
 		ImGui::SameLine();
 		ImGui::PushItemWidth(150);
-		if (ImGui::BeginCombo("##markup combo", prevStr))
+		if (ImGui::BeginCombo("##markup combo", prevStr.c_str()))
 		{
 			if (ImGui::Selectable(totalStr))
 			{
@@ -145,9 +146,9 @@ void cInfoView::RenderMarkupList()
 
 			for (auto &markup : g_global->m_markups)
 			{
-				if (ImGui::Selectable(markup.name.c_str()))
+				if (ImGui::Selectable(StrId(markup.name).utf8().c_str()))
 				{
-					prevStr = markup.name.c_str();
+					prevStr = StrId(markup.name).utf8().c_str();
 					sortType = markup.type;
 				}
 			}
