@@ -4,11 +4,13 @@
 #include "../../../../Common/Common/common.h"
 #include "../../../../Common/Graphic11/graphic11.h"
 #include "../../../../Common/Framework11/framework11.h"
-#include "../../../../Common/Network2/network2.h"
 
 
 using common::StrId;
+using common::Vector2;
 using common::Vector3;
+using common::Vector4;
+using common::sRectf;
 
 static const int MAX_ROBOT = 20;
 static const int MAX_NET_GRAPH = 500;

@@ -15,6 +15,7 @@ c3DView::c3DView(const string &name)
 	, m_isShowTexture(true)
 	, m_isShowGridLine(false)
 	, m_isShowPointCloud(false)
+	, m_isShowPointCloudMesh(false)
 	, m_isShowPcMap(false)
 	, m_isShowPopupMenu(false)
 	, m_isBeginPopupMenu(false)
@@ -174,17 +175,23 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		if (m_isShowPointCloud)
 		{
 			Transform tfm;
-			//tfm.scale = Vector3(-1, -1, 1);
-			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
-			m_pointCloud.SetShader(NULL);
-			m_pointCloud.Render(renderer, tfm.GetMatrixXM());
-		}
 
+			if (m_isShowPointCloudMesh)
+			{
+				m_pointCloud.SetShader(nullptr);
+				m_pointCloud.Render(renderer, tfm.GetMatrixXM());
+			}
+			else
+			{
+				m_pointCloud.SetShader(&m_pointShader);
+				renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
+				m_pointCloud.RenderTessellation(renderer, 1, tfm.GetMatrixXM());
+			}
+		}
+		
 		if (m_isShowPcMap)
 		{
 			Transform tfm;
-			//tfm.scale = Vector3(-1, -1, 1);
-			//tfm.rot.SetRotationZ(MATH_PI * 1.5f);
 			renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
 			m_pcMapModel.SetShader(&m_pointShader);
 			m_pcMapModel.RenderTessellation(renderer, 1, tfm.GetMatrixXM());
@@ -211,8 +218,8 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			renderer.m_dbgLine.SetLine(Vector3(0,0,0), ray.orig + ray.dir * 100.f, 0.001f);
 			renderer.m_dbgLine.Render(renderer);
 		}
-
-		// Render Line Point to Information Window
+		
+		// Render Line Point to Memo Window
 		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
 			g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
 		if (pin && (eEditState::Zoom != g_global->m_state))
@@ -353,7 +360,12 @@ void c3DView::OnRender(const float deltaSeconds)
 		ImGui::SameLine();
 		if (ImGui::Checkbox("3D      ", &m_isShowPointCloud))
 			m_isShowTexture = !m_isShowPointCloud;
-
+		if (m_isShowPointCloud)
+		{
+			ImGui::SameLine();
+			ImGui::Checkbox("Mesh", &m_isShowPointCloudMesh);
+		}
+		
 		//ImGui::SameLine();
 		//ImGui::Checkbox("PCMap", &m_isShowPcMap);
 		//ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
@@ -433,13 +445,13 @@ void c3DView::RenderKeymap(const ImVec2 &pos)
 							Vector2(keymapSize.x * uv.x
 								, keymapSize.y * uv.y);
 
-						//ImGui::SetCursorPos(*(ImVec2*)&pos);
-						//ImGui::Image(m_pinImg->m_texSRV, ImVec2(10, 10));
+						const ImVec4 pinColor = (pin == m_curPinInfo) ?
+							ImVec4(1, 0, 0, 1) : ImVec4(0.4f, 0.2f, 0.2f, 1.f);
 
 						ImGui::SetCursorPos(*(ImVec2*)&pos);
-						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.1f, 1.f));
-						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.1f, 1.f));
-						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.2f, 0.1f, 1.f));
+						ImGui::PushStyleColor(ImGuiCol_Button, pinColor);
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.f, 0.2f, 0.2f, 1.f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.1f, 0.1f, 1.f));
 						ImGui::PushID(pin);
 						if (ImGui::Button(" ", ImVec2(10, 10)))
 							JumpPin(pin->name.c_str());
@@ -560,7 +572,8 @@ void c3DView::RenderPcMemo()
 		if (m_isUpdatePcWindowPos || m_mouseDown[1])
 		{
 			const Vector2 screenPos = m_camera.GetScreenPos(pc->wndPos);
-			const ImVec2 wndPos(screenPos.x, screenPos.y);
+			const ImVec2 wndPos(screenPos.x + m_rect.left
+				, screenPos.y + m_rect.top + MENUBAR_HEIGHT2);
 			ImGui::SetNextWindowPos(wndPos);
 			ImGui::SetNextWindowSize(ImVec2(pc->wndSize.x, pc->wndSize.y));
 		}
@@ -605,7 +618,6 @@ void c3DView::RenderPcMemo()
 						{
 							p->name = StrId(toks[0]).ansi();
 							isUpdateWindowPos = true;
-							isStoreWndPos = true;
 							break;
 						}
 					}
@@ -621,12 +633,12 @@ void c3DView::RenderPcMemo()
 
 			// 창이 마우스로 선택되면, 위치정보를 업데이트 한다.
 			// 창은 사용자가 임의로 위치를 이동할 수 있다.
-			if (isStoreWndPos
-				|| (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered()))
+			if (m_mouseDown[0] && ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 			{
 				ImVec2 wndPos = ImGui::GetWindowPos();
 				// 2d 좌표를 3d로 좌표로 변환해서 저장한다.
-				const Ray r = m_camera.GetRay((int)wndPos.x, (int)wndPos.y);
+				const Ray r = m_camera.GetRay((int)(wndPos.x - m_rect.left)
+					, (int)(wndPos.y - (m_rect.top + MENUBAR_HEIGHT2)));
 				const float len = r.orig.Distance(pc->pos);
 				Vector3 pos = r.orig + r.dir * len * 0.9f;
 				pc->wndPos = pos;

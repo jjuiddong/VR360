@@ -80,7 +80,7 @@ bool cPointCloudMap::Read(const StrPath &fileName
 		m_uvSearchX.insert(uv.x);
 	}
 
-	Interpolation();
+	//Interpolation();
 
 	return true;
 }

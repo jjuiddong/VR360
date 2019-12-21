@@ -467,8 +467,39 @@ bool cHierarchyView::RenderEditPinDlg()
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.1f, 1.f));
 		if (ImGui::Button("Apply"))
 		{
-			isApply = true;
-			open = false;
+			// check same name pin
+			// 같은 층에 같은 이름의 pin이 있으면 문제가 발생한다.
+			// 에러처리 해야한다.
+			bool isError = false;
+			for (auto &date : m_editPc.m_project.dates)
+			{
+				for (auto &floor : date->floors)
+				{
+					set<StrId> ids;
+					for (auto &pin : floor->pins)
+					{
+						if (ids.end() != ids.find(pin->name))
+						{
+							isError = true;
+							goto $closeloop;
+						}
+						ids.insert(pin->name);
+					}
+				}
+			}
+
+		$closeloop:
+			if (isError)
+			{
+				::MessageBoxA(m_owner->getSystemHandle()
+					, "같은 이름의 Pin Name이 있습니다.\nPin Name을 다르게 설정해 주십시오.", "ERROR"
+					, MB_OK | MB_ICONERROR);
+			}
+			else
+			{
+				isApply = true;
+				open = false;
+			}
 		}
 		ImGui::PopStyleColor(3);
 

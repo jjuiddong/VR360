@@ -57,7 +57,7 @@ public:
 	Vector3 m_mousePickPos; // mouse cursor pos in ground picking
 	bool m_mouseDown[3]; // Left, Right, Middle
 	float m_rotateLen;
-	Plane m_groundPlane1;
-	Plane m_groundPlane2;
+	common::Plane m_groundPlane1;
+	common::Plane m_groundPlane2;
 };
 

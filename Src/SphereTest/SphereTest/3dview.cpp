@@ -75,9 +75,8 @@ bool c3DView::Init(cRenderer &renderer)
 			, Vector2(offset,offset)
 		};
 		m_quad1.Create(renderer, 0, 100, 200, 200
+			, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0)
 			, fileName
-			//, "J6tcu.png"
-			, NULL
 			, uvs
 		);
 	}
@@ -91,9 +90,8 @@ bool c3DView::Init(cRenderer &renderer)
 			, Vector2(offset,offset)
 		};
 		m_quad2.Create(renderer, 0, 310, 200, 200
+			, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0)
 			, fileName
-			//, "J6tcu.png"
-			, NULL
 			, uvs
 		);
 	}
@@ -107,9 +105,8 @@ bool c3DView::Init(cRenderer &renderer)
 			, Vector2(offset,offset)
 		};
 		m_quad3.Create(renderer, 0, 520, 200, 200
+			, (eVertexType::POSITION_RHW | eVertexType::COLOR | eVertexType::TEXTURE0)
 			, fileName
-			//, "J6tcu.png"
-			, NULL
 			, uvs
 		);
 	}
@@ -226,14 +223,14 @@ void c3DView::OnRender(const float deltaSeconds)
 
 	// HUD
 	// Render Menu Window
-	const int MENU_WIDTH = 450;
+	const float MENU_WIDTH = 450.f;
 	const float windowAlpha = 0.0f;
 	bool isOpen = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 	ImGui::SetNextWindowPos(pos);
 	ImGui::SetNextWindowBgAlpha(windowAlpha);
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 100));
+	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 100.f));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -474,7 +471,7 @@ void c3DView::OnEventProc(const sf::Event &evt)
 	switch (evt.type)
 	{
 	case sf::Event::KeyPressed:
-		switch (evt.key.code)
+		switch (evt.key.cmd)
 		{
 		case sf::Keyboard::Return: break;
 		case sf::Keyboard::Space: break;

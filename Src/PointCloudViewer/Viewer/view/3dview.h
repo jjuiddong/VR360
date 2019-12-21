@@ -73,6 +73,7 @@ public:
 	bool m_isShowTexture;
 	bool m_isShowGridLine;
 	bool m_isShowPointCloud; // point cloud
+	bool m_isShowPointCloudMesh; // point cloud, render mesh
 	bool m_isShowPcMap; // tessellation
 	bool m_isShowPopupMenu;
 	bool m_isBeginPopupMenu;
