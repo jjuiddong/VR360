@@ -56,21 +56,26 @@ void cHierarchyView::OnUpdate(const float deltaSeconds)
 
 void cHierarchyView::OnRender(const float deltaSeconds)
 {
-	if (ImGui::Button("Project Setting"))
-	{
+	const bool isLoad = g_global->m_pcDb.IsLoad();
+	if (!isLoad)
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.f));
+
+	if (ImGui::ButtonOption("Project Setting", ImVec2(0,0), isLoad))
 		ProjectSetting();
-	}
 
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
-	if (ImGui::Button("Refresh"))
+	if (ImGui::ButtonOption("Refresh", ImVec2(0, 0), isLoad))
 	{
 		if (g_global->m_pcDb.IsLoad())//null project return
 		{
 			UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
 		}
 	}
+	if (!isLoad)
+		ImGui::PopStyleColor(1);
+
 	ImGui::Spacing();
 
 	RenderHierarchy2(m_hierarchy);
@@ -142,6 +147,35 @@ bool cHierarchyView::SaveProject()
 {
 	if (g_global->m_pcDb.IsLoad())//null project return
 	{
+		StrPath fileName = g_global->m_pcDb.m_fileName;
+		if (!fileName.empty())
+		{
+			if (g_global->m_pcDb.Write(fileName))
+			{
+				common::Str128 msg;
+				msg.Format("Success!! Save Project File\n[ %s ]"
+					, fileName.c_str());
+				::MessageBoxA(m_owner->getSystemHandle()
+					, msg.c_str(), "CONFIRM"
+					, MB_OK | MB_ICONINFORMATION);
+			}
+			else
+			{
+				::MessageBoxA(m_owner->getSystemHandle()
+					, "Error!! Write Project File (Internal Error)", "ERROR"
+					, MB_OK | MB_ICONERROR);
+			}
+		}
+	}
+
+	return true;
+}
+
+
+bool cHierarchyView::SaveAsProject()
+{
+	if (g_global->m_pcDb.IsLoad())//null project return
+	{
 		StrPath fileName = common::SaveFileDialog(m_owner->getSystemHandle()
 			, { {L"Project File (*.prj)", L"*.prj"}
 				, {L"All File (*.*)", L"*.*"} });
@@ -149,8 +183,11 @@ bool cHierarchyView::SaveProject()
 		{
 			if (g_global->m_pcDb.Write(fileName))
 			{
+				common::Str128 msg;
+				msg.Format("Success!! Save Project File\n[ %s ]"
+					, fileName.c_str());
 				::MessageBoxA(m_owner->getSystemHandle()
-					, "Success!! Write Project File", "CONFIRM"
+					, msg.c_str(), "CONFIRM"
 					, MB_OK | MB_ICONINFORMATION);
 			}
 			else
@@ -422,7 +459,7 @@ bool cHierarchyView::RenderEditPinDlg()
 						const Vector2 txtPos = pos + Vector2(0, 10.f);
 						ImGui::SetCursorPos(*(ImVec2*)&txtPos);
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
-						ImGui::TextUnformatted(pin->name.c_str());
+						ImGui::TextUnformatted(pin->name.utf8().c_str());
 						ImGui::PopStyleColor();
 					}
 				}
@@ -727,7 +764,7 @@ bool cHierarchyView::RenderPinEdit()
 		{
 			cPointCloudDB::sPin *pin = new cPointCloudDB::sPin;
 			pin->name = "Pin";
-			pin->tessScale = 0.02f;
+			pin->tessScale = 3.0f;
 			pin->keymapPos = Vector2(0, 0);
 			m_selFloor->pins.push_back(pin);
 		}
@@ -766,7 +803,7 @@ bool cHierarchyView::RenderPinEdit()
 			{
 				ImGui::PushID(pin);
 				const bool isSel = pin == m_selPin;
-				if (ImGui::Selectable(pin->name.c_str(), isSel))
+				if (ImGui::Selectable(pin->name.utf8().c_str(), isSel))
 					m_selPin = pin;
 				ImGui::PopID();
 			}

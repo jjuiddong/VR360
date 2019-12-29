@@ -7,7 +7,7 @@
 
 DECLARE_ENUM(eMarkup
 	, Issue
-	, Direction
+	//, Direction
 	, Review
 	, Water
 	, ElectricProblem
@@ -23,6 +23,10 @@ DECLARE_ENUM(eMarkup
 	, Cement
 	, SteelFrame
 	, I_Steel
+	, Direction_Up
+	, Direction_Down
+	, Direction_Left
+	, Direction_Right
 	, None
 );
 

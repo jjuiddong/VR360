@@ -30,6 +30,7 @@ c3DView::c3DView(const string &name)
 	, m_shareBtnSize(40, 20)
 	, m_isShowKeymap(true)
 	, m_isShowMeasure(true)
+	, m_markupScale(0.35f)
 {
 }
 
@@ -463,7 +464,7 @@ void c3DView::RenderKeymap(const ImVec2 &pos)
 							ImVec4(1, 0, 0, 1) : ImVec4(0, 0, 1, 1);
 						ImGui::SetCursorPos(*(ImVec2*)&txtPos);
 						ImGui::PushStyleColor(ImGuiCol_Text, txtColor);
-						ImGui::TextUnformatted(pin->name.c_str());
+						ImGui::TextUnformatted(pin->name.utf8().c_str());
 						ImGui::PopStyleColor();
 					}
 				}
@@ -730,10 +731,12 @@ void c3DView::RenderMarkup(graphic::cRenderer &renderer)
 			continue;
 		if (cPointCloudDB::sPCData::MARKUP != pc->type)
 			continue;
+		if (g_global->m_markups.size() <= (uint)pc->markup)
+			continue;
 
 		Transform tfm;
 		tfm.pos = pc->pos;
-		tfm.scale = Vector3::Ones * 0.25f;
+		tfm.scale = Vector3::Ones * m_markupScale;
 		m_markup.m_transform = tfm;
 		m_markup.m_texture = g_global->m_markups[pc->markup].icon;
 		m_markup.Render(renderer);
@@ -964,6 +967,8 @@ bool c3DView::MakeShareFile()
 			{
 				const StrPath pcdFileName = dstFileName + "\\" + pin->pc3dFileName.GetFileName();
 				const StrPath textureFileName = dstFileName + "\\" + pin->pcTextureFileName.GetFileName();
+				const StrPath srcPcmapFileName = pin->pc3dFileName.GetFileNameExceptExt2() + ".pcmap";
+				const StrPath pcmapFileName = pcdFileName.GetFileNameExceptExt2() + ".pcmap";
 
 				if (pin->pc3dFileName.IsFileExist())
 				{
@@ -989,6 +994,17 @@ bool c3DView::MakeShareFile()
 					}
 
 					pin->pcTextureFileName = textureFileName;
+				}
+
+				if (srcPcmapFileName.IsFileExist())
+				{
+					// copy to share folder
+					if (!::CopyFileA(srcPcmapFileName.c_str(), pcmapFileName.c_str(), FALSE))
+					{
+						::MessageBoxA(m_owner->getSystemHandle()
+							, "Error ShareFile10", "ERROR", MB_OK | MB_ICONERROR);
+						return false;
+					}
 				}
 			}//~pins
 		}//~floors

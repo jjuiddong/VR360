@@ -492,13 +492,17 @@ void cViewer::OnRenderMenuBar()
 	{
 		if (ImGui::BeginMenu("File"))
 		{
+			const bool isLoad = g_global->m_pcDb.IsLoad();
+
 			if (ImGui::MenuItem("New", NULL))
 				g_global->m_hierarchyView->NewProject();
 			if (ImGui::MenuItem("Open", NULL))
 				g_global->m_hierarchyView->OpenProject();
-			if (ImGui::MenuItem("Save", NULL))
+			if (ImGui::MenuItem("Save", nullptr, nullptr, isLoad))
 				g_global->m_hierarchyView->SaveProject();
-			if (ImGui::MenuItem("Project Setting", NULL))
+			if (ImGui::MenuItem("Save As", nullptr, nullptr, isLoad))
+				g_global->m_hierarchyView->SaveAsProject();
+			if (ImGui::MenuItem("Project Setting", nullptr, nullptr, isLoad))
 				g_global->m_hierarchyView->ProjectSetting();
 
 			ImGui::EndMenu();

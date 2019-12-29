@@ -18,6 +18,7 @@ public:
 	bool NewProject();
 	bool OpenProject();
 	bool SaveProject();
+	bool SaveAsProject();
 	bool ProjectSetting();
 
 

@@ -69,6 +69,7 @@ public:
 	common::Ray m_pointUVRay;
 	float m_sphereRadius;
 	float m_pickPosDistance;
+	float m_markupScale;
 	bool m_isShowWireframe;
 	bool m_isShowTexture;
 	bool m_isShowGridLine;

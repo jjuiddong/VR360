@@ -76,22 +76,6 @@ void cInfoView::OnUpdate(const float deltaSeconds)
 
 void cInfoView::OnRender(const float deltaSeconds)
 {
-	// share button
-	//const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-	//ImGui::PushStyleColor(ImGuiCol_Button, col);
-	//if (ImGui::ImageButton(m_shareTex->m_texSRV, m_shareBtnSize))
-	//{
-
-	//}
-	//ImGui::PopStyleColor();
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::TextUnformatted("Share");
-		ImGui::EndTooltip();
-	}
-
 	RenderMarkupList();
 	RenderMeasure();
 	RenderCapture();
@@ -110,12 +94,6 @@ void cInfoView::RenderMarkupList()
 	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
 	if (ImGui::CollapsingHeader("Mark-up"))
 	{
-		//ImGui::Spacing();
-		//ImGui::Separator();
-		//ImGui::Spacing();
-		//ImGui::Text("Mark-up List");
-		//ImGui::Spacing();
-
 		const ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
 		ImGui::PushStyleColor(ImGuiCol_Button, col);
 		if (ImGui::ImageButton(m_markupTex->m_texSRV, m_markupBtnSize))
@@ -161,50 +139,62 @@ void cInfoView::RenderMarkupList()
 
 		for (auto &date : pcDb.m_project.dates)
 		{
-			for (auto &floor : date->floors)
+			ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+			ImGui::PushID((int)date->name.c_str());
+			if (ImGui::TreeNode(date->name.utf8().c_str()))
 			{
-				for (auto &pin : floor->pins)
+				for (auto &floor : date->floors)
 				{
-					//ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-					ImGui::PushID((int)pin->name.c_str());
-					if (ImGui::TreeNode(pin->name.utf8().c_str()))
+					ImGui::PushID((int)floor->name.c_str());
+					if (ImGui::TreeNode(floor->name.utf8().c_str()))
 					{
-						for (auto &pc : pin->pcds)
+						for (auto &pin : floor->pins)
 						{
-							if (cPointCloudDB::sPCData::MEMO == pc->type)
-								continue;
-
-							if ((sortType != eMarkup::None)
-								&& (pc->markup != sortType))
-								continue;
-
-							ImGui::PushID((int)pc->name.c_str());
-							if (ImGui::TreeNode(pc->name.utf8().c_str()))
+							ImGui::PushID((int)pin->name.c_str());
+							if (ImGui::TreeNode(pin->name.utf8().c_str()))
 							{
-								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
-								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
-								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
-								if (ImGui::Button("Remove"))
+								for (auto &pc : pin->pcds)
 								{
-									common::Str128 msg;
-									msg.Format("Remove Markup [ %s ]?", pc->name.ansi().c_str());
-									if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-										, msg.c_str(), "CONFIRM", MB_YESNO))
-									{
-										rmPcs.insert(pc->id);
-									}
-								}
-								ImGui::PopStyleColor(3);
+									if (cPointCloudDB::sPCData::MEMO == pc->type)
+										continue;
 
+									if ((sortType != eMarkup::None)
+										&& (pc->markup != sortType))
+										continue;
+
+									ImGui::PushID((int)pc->name.c_str());
+									if (ImGui::TreeNode(pc->name.utf8().c_str()))
+									{
+										ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
+										ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
+										ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
+										if (ImGui::Button("Remove"))
+										{
+											common::Str128 msg;
+											msg.Format("Remove Markup [ %s ]?", pc->name.c_str());
+											if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+												, msg.c_str(), "CONFIRM", MB_YESNO))
+											{
+												rmPcs.insert(pc->id);
+											}
+										}
+										ImGui::PopStyleColor(3);
+
+										ImGui::TreePop();
+									}//~point tree
+									ImGui::PopID();
+								}//~points
 								ImGui::TreePop();
-							}//~point tree
+							}
 							ImGui::PopID();
-						}//~points
+						}//~pins
 						ImGui::TreePop();
-					}
+					}//~floors tree node
 					ImGui::PopID();
-				}//~pins
-			}//~floors
+				}//~floors
+				ImGui::TreePop();
+			} //~date treenode
+			ImGui::PopID();
 		}//~dates
 
 		// remove point
@@ -403,70 +393,79 @@ void cInfoView::RenderPopupmenu()
 void cInfoView::RenderPinHierarchy()
 {
 	cPointCloudDB &pcDb = g_global->m_pcDb;
+	const int iddummy = 1234;
 
 	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-	if (ImGui::CollapsingHeader("Pin Hierarchy"))
+	if (ImGui::CollapsingHeader("Memo"))
 	{
-		//ImGui::Spacing();
-		//ImGui::Separator();
-		//ImGui::Spacing();
-		//ImGui::Text("Memo List");
-
 		set<int> rmPcs;
 		for (auto &date : pcDb.m_project.dates)
 		{
-			for (auto &floor : date->floors)
+			ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+			ImGui::PushID((int)date->name.c_str() + iddummy);
+			if (ImGui::TreeNode(date->name.utf8().c_str()))
 			{
-				for (auto &pin : floor->pins)
+				for (auto &floor : date->floors)
 				{
-					ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
-					ImGui::PushID((int)pin->name.c_str() + 10000);
-					if (ImGui::TreeNode(pin->name.utf8().c_str()))
+					ImGui::PushID((int)floor->name.c_str() + iddummy);
+					if (ImGui::TreeNode(floor->name.utf8().c_str()))
 					{
-						for (auto &pc : pin->pcds)
+						for (auto &pin : floor->pins)
 						{
-							if (cPointCloudDB::sPCData::MARKUP == pc->type)
-								continue;
-
-							ImGui::PushID((int)pc->name.c_str());
-							if (ImGui::TreeNode(pc->name.utf8().c_str()))
+							ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
+							ImGui::PushID((int)pin->name.c_str() + 10000);
+							if (ImGui::TreeNode(pin->name.utf8().c_str()))
 							{
-								ImGui::PushID(pc + 1);
-								common::Str128 text;
-								//text.Format("Pos : %.2f, %.2f, %.2f", pc->pos.x, pc->pos.y, pc->pos.z);
-								text.Format("Pos : %.2f,%.2f", pc->uvpos.x, pc->uvpos.y);
-								ImGui::Selectable(text.c_str());
-								ImGui::PopID();
-
-								ImGui::PushID(pc + 2);
-								ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE);
-								ImGui::PopID();
-
-								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
-								ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
-								ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
-								if (ImGui::Button("Remove"))
+								for (auto &pc : pin->pcds)
 								{
-									common::Str128 msg;
-									msg.Format("Remove Point [ %s ]?", pc->name.c_str());
-									if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
-										, msg.c_str(), "CONFIRM", MB_YESNO))
+									if (cPointCloudDB::sPCData::MARKUP == pc->type)
+										continue;
+
+									ImGui::PushID((int)pc->name.c_str());
+									if (ImGui::TreeNode(pc->name.utf8().c_str()))
 									{
-										rmPcs.insert(pc->id);
-									}
-								}
-								ImGui::PopStyleColor(3);
+										ImGui::PushID(pc + 1);
+										common::Str128 text;
+										//text.Format("Pos : %.2f, %.2f, %.2f", pc->pos.x, pc->pos.y, pc->pos.z);
+										text.Format("Pos : %.2f,%.2f", pc->uvpos.x, pc->uvpos.y);
+										ImGui::Selectable(text.c_str());
+										ImGui::PopID();
+
+										ImGui::PushID(pc + 2);
+										ImGui::InputTextMultiline("", pc->desc.m_str, pc->desc.SIZE);
+										ImGui::PopID();
+
+										ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
+										ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.1f, 0.1f, 1.f));
+										ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.f));
+										if (ImGui::Button("Remove"))
+										{
+											common::Str128 msg;
+											msg.Format("Remove Point [ %s ]?", pc->name.c_str());
+											if (IDYES == ::MessageBoxA(m_owner->getSystemHandle()
+												, msg.c_str(), "CONFIRM", MB_YESNO))
+											{
+												rmPcs.insert(pc->id);
+											}
+										}
+										ImGui::PopStyleColor(3);
+
+										ImGui::TreePop();
+									}//~point tree
+									ImGui::PopID();
+								} //~points
 
 								ImGui::TreePop();
-							}//~point tree
+							}//~pin tree
 							ImGui::PopID();
-						} //~points
-
+						}//~pins
 						ImGui::TreePop();
-					}//~pin tree
+					}//~floor nodetree
 					ImGui::PopID();
-				}//~pins
-			} //~floors
+				} //~floors
+				ImGui::TreePop();
+			}//~date treenode
+			ImGui::PopID();
 		}//~dates
 
 		// remove point
