@@ -23,6 +23,7 @@ protected:
 	void RenderPopupmenu();
 	void RenderPinHierarchy();
 
+
 public:
 	graphic::cTexture *m_measureTex;
 	graphic::cTexture *m_captureTex;

@@ -18,7 +18,7 @@ cGlobal::~cGlobal()
 
 bool cGlobal::Init()
 {
-	m_cPinStr = "camera1";
+	m_pinName = "camera1";
 
 	// initialize markup 
 	m_markups.push_back({ eMarkup::Issue, "ÀÌ½´ ¹ß»ý", "ÀÌ½´ ¹ß»ý", "./media/icon/M1.png" });
@@ -52,13 +52,7 @@ bool cGlobal::ReadProjectFile(const StrPath &fileName)
 	if (!m_pcDb.Read(fileName))
 		return false;
 
-	// load keymap file
-	//m_3dView->m_keyMap.m_texture
-	//	= graphic::cResourceManager::Get()->LoadTexture(
-	//		m_3dView->GetRenderer(), m_pcDb.m_project.keymapFileName);
-
 	m_3dView->m_curPinInfo = nullptr;
-
 	return true;
 }
 
@@ -114,6 +108,31 @@ bool cGlobal::LoadPCMap(const StrPath &pcMapFileName)
 }
 
 
+// return current measurement information
+vector<sMeasurePt>* cGlobal::GetCurrentMeasurePts()
+{
+	const string id = GetCurrentUniquePinId();
+	if (id.empty())
+		return nullptr;
+	return &m_measures[id];
+}
+
+
+// make date-floor-pin name string
+// if not select date,floor,pin return empty string
+string cGlobal::GetCurrentUniquePinId()
+{
+	if (m_dateName.empty()
+		|| m_floorName.empty()
+		|| m_pinName.empty()
+		)
+		return "";
+
+	const string id = m_dateName + "-" + m_floorName + "-" + m_pinName;
+	return id;
+}
+
+
 void cGlobal::ClearMap()
 {
 	for (auto &kv : m_maps)
@@ -124,7 +143,6 @@ void cGlobal::ClearMap()
 
 void cGlobal::Clear()
 {
-	m_pcDb.Write("pointcloud_data.json");
 	m_pcDb.Clear();
 	ClearMap();
 }

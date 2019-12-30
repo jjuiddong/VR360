@@ -5,9 +5,13 @@
 #pragma once
 
 
+enum eEditState {
+	VR360, Measure, Capture, Zoom
+};
+
+
 DECLARE_ENUM(eMarkup
 	, Issue
-	//, Direction
 	, Review
 	, Water
 	, ElectricProblem
@@ -44,4 +48,13 @@ struct sMarkup
 		, const string &desc0, const string &iconFileName0
 		, graphic::cTexture *icon0=nullptr)
 	 : type(type0), name(name0), desc(desc0), iconFileName(iconFileName0), icon(icon0) {}
+};
+
+
+// measure information
+struct sMeasurePt
+{
+	Vector3 epos; // equirectangular pos
+	Vector3 rpos; // real pos, point cloud pos
+	Vector2 uv;
 };

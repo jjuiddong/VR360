@@ -10,20 +10,6 @@ class cInfoView;
 class cHierarchyView;
 class cPointCloudMap;
 
-enum eEditState {
-	VR360, Measure, Capture, Zoom
-};
-
-
-// measure information
-struct sMeasurePt 
-{
-	Vector3 epos; // equirectangular pos
-	Vector3 rpos; // real pos, point cloud pos
-	Vector2 uv;
-};
-
-
 class cGlobal
 {
 public:
@@ -33,24 +19,29 @@ public:
 	bool Init();
 	bool ReadProjectFile(const StrPath &fileName);
 	bool LoadPCMap(const StrPath &pcMapFileName);
+	vector<sMeasurePt>* GetCurrentMeasurePts();
+	string GetCurrentUniquePinId();
 	void ClearMap();
 	void Clear();
 
 
 public:
 	eEditState m_state;
+	cPointCloudDB m_pcDb;
+	cPointCloudMap *m_pcMap; // current point cloud map, reference
+	map<string, cPointCloudMap*> m_maps; // key: filename
+	vector<sMarkup> m_markups;
+
+	map<string, vector<sMeasurePt>> m_measures; // point cloud position array, key: unique pin id
+	vector<string> m_captures; // cpature file array
+
+	// current selection date-floor-pin
+	string m_dateName; // current date Name
+	string m_floorName; // current floor Name
+	string m_pinName; // current Pin Name
+
+	// view
 	c3DView *m_3dView;
 	cInfoView *m_infoView;
 	cHierarchyView *m_hierarchyView;
-	cPointCloudDB m_pcDb;
-	cPointCloudMap *m_pcMap;
-	map<string, cPointCloudMap*> m_maps;
-	vector<sMarkup> m_markups;
-
-	string m_cDateStr; // current date Name
-	string m_cFloorStr; // current Floor Name
-	string m_cPinStr; // current Pin Name
-
-	vector<sMeasurePt> m_measures; // point cloud position array
-	vector<string> m_captures; // cpature file array
 };

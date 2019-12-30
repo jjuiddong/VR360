@@ -899,8 +899,8 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 {
 	RETV(!node, false);
 
-	const string &selDateStr = g_global->m_cDateStr;
-	const string &selFloorStr = g_global->m_cFloorStr;
+	const string &selDateStr = g_global->m_dateName;
+	const string &selFloorStr = g_global->m_floorName;
 
 	common::sFolderNode *dateNode = nullptr;
 
@@ -914,8 +914,8 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 		ImGui::SameLine();
 		if (ImGui::Selectable(text.utf8().c_str(), isSelect))
 		{
-			g_global->m_cDateStr = text.c_str();
-			g_global->m_cFloorStr.clear();
+			g_global->m_dateName = text.c_str();
+			g_global->m_floorName.clear();
 			common::Str128 title;
 			title.Format("[%s]-[%s]"
 				, g_global->m_pcDb.m_project.name.c_str(), text.c_str());
@@ -943,11 +943,11 @@ bool cHierarchyView::RenderHierarchy2(common::sFolderNode *node)
 		ImGui::Indent(45);
 		if (ImGui::Selectable(text.utf8().c_str(), isSelect))
 		{
-			g_global->m_cFloorStr = text.c_str();
+			g_global->m_floorName = text.c_str();
 			common::Str128 title;
 			title.Format("[%s]-[%s]-[%s]"
 				, g_global->m_pcDb.m_project.name.c_str()
-				, g_global->m_cDateStr.c_str(), text.c_str());
+				, g_global->m_dateName.c_str(), text.c_str());
 			g_application->m_title = title.utf8();
 			floorNode = kv.second;
 			isFloorClicked = true;

@@ -262,42 +262,51 @@ void cInfoView::RenderMeasure()
 		ImGui::Checkbox("##showmeasure", &g_global->m_3dView->m_isShowMeasure);
 
 		ImGui::SameLine();
+
+		vector<sMeasurePt> *measurePts = g_global->GetCurrentMeasurePts();
+
 		if (ImGui::Button("Clear"))
-			g_global->m_measures.clear();
-
-		int rmPt = -1;
-		for (uint i = 0; i < g_global->m_measures.size(); ++i)
 		{
-			const sMeasurePt &p0 = g_global->m_measures[i];
-
-			float indent = 0;
-			if ((i % 2) == 0)
-			{
-				ImGui::PushID((int)&p0);
-				if (ImGui::Button("X"))
-					rmPt = (int)i;
-				ImGui::PopID();
-				ImGui::SameLine();
-			}
-			else
-			{
-				indent = 23;
-			}
-
-			common::Str128 text;
-			text.Format("%.1f, %.1f, %.1f", p0.rpos.x, p0.rpos.y, p0.rpos.z);
-			ImGui::Indent(indent);
-			ImGui::Selectable(text.c_str());
-			ImGui::Unindent(indent);
+			if (measurePts)
+				measurePts->clear();
 		}
 
-		// remove measure point
-		if (rmPt >= 0)
+		if (measurePts)
 		{
-			// remove pair point
-			common::rotatepopvector(g_global->m_measures, rmPt);
-			if ((int)g_global->m_measures.size() > rmPt)
-				common::rotatepopvector(g_global->m_measures, rmPt);
+			int rmPt = -1;
+			for (uint i = 0; i < measurePts->size(); ++i)
+			{
+				const sMeasurePt &p0 = measurePts->at(i);
+
+				float indent = 0;
+				if ((i % 2) == 0)
+				{
+					ImGui::PushID((int)&p0);
+					if (ImGui::Button("X"))
+						rmPt = (int)i;
+					ImGui::PopID();
+					ImGui::SameLine();
+				}
+				else
+				{
+					indent = 23;
+				}
+
+				common::Str128 text;
+				text.Format("%.1f, %.1f, %.1f", p0.rpos.x, p0.rpos.y, p0.rpos.z);
+				ImGui::Indent(indent);
+				ImGui::Selectable(text.c_str());
+				ImGui::Unindent(indent);
+			}
+
+			// remove measure point
+			if (rmPt >= 0)
+			{
+				// remove pair point
+				common::rotatepopvector(*measurePts, rmPt);
+				if ((int)measurePts->size() > rmPt)
+					common::rotatepopvector(*measurePts, rmPt);
+			}
 		}
 
 		ImGui::Spacing();
@@ -343,7 +352,7 @@ void cInfoView::RenderPopupmenu()
 	const Vector2 pointUV = g_global->m_3dView->m_pointUV;
 
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-		g_global->m_cDateStr, g_global->m_cFloorStr);
+		g_global->m_dateName, g_global->m_floorName);
 	if (!floor || pointCloudPos.IsEmpty())
 	{
 		m_isShowPopupMenu = false;
@@ -369,7 +378,7 @@ void cInfoView::RenderPopupmenu()
 				{
 					// add markup
 					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
-						floor, g_global->m_cPinStr);
+						floor, g_global->m_pinName);
 					if (pc)
 					{
 						pc->type = cPointCloudDB::sPCData::MARKUP;

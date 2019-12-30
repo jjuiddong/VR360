@@ -222,7 +222,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 		
 		// Render Line Point to Memo Window
 		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
-			g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
+			g_global->m_dateName, g_global->m_floorName, g_global->m_pinName);
 		if (pin && (eEditState::Zoom != g_global->m_state))
 		{
 			renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
@@ -269,7 +269,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 	if (g_global->m_state == eEditState::Capture)
 	{
 		cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
-			g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
+			g_global->m_dateName, g_global->m_floorName, g_global->m_pinName);
 		if (pin) // check load pin
 		{
 			// save capture file to project directory/capture folder
@@ -281,8 +281,8 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			if (!common::IsFileExist(fileName)) // check capture folder
 				CreateDirectoryA(fileName.c_str(), NULL); // make capture folder
 
-			fileName += string("\\") + dts + " [" + g_global->m_cDateStr + "][" 
-				+ g_global->m_cFloorStr + "][" + g_global->m_cPinStr + "]";
+			fileName += string("\\") + dts + " [" + g_global->m_dateName + "][" 
+				+ g_global->m_floorName + "][" + g_global->m_pinName + "]";
 			fileName += ".jpg";
 
 			if (S_OK == DirectX::SaveWICTextureToFile(renderer.m_devContext
@@ -301,13 +301,15 @@ void c3DView::OnPreRender(const float deltaSeconds)
 
 void c3DView::RenderMeasure(graphic::cRenderer &renderer)
 {
-	RET(g_global->m_measures.empty());
+	vector<sMeasurePt> *measurePts = g_global->GetCurrentMeasurePts();
+	if (!measurePts)
+		return;
 
 	float totLen = 0.f;
-	for (uint i = 1; i < g_global->m_measures.size(); i+=2)
+	for (uint i = 1; i < measurePts->size(); i+=2)
 	{
-		const sMeasurePt &p0 = g_global->m_measures[i - 1];
-		const sMeasurePt &p1 = g_global->m_measures[i];
+		const sMeasurePt &p0 = measurePts->at(i - 1);
+		const sMeasurePt &p1 = measurePts->at(i);
 
 		renderer.m_dbgLine.SetColor(cColor::RED);
 		renderer.m_dbgLine.SetLine(p0.epos, p1.epos, 0.01f);
@@ -385,7 +387,7 @@ void c3DView::OnRender(const float deltaSeconds)
 void c3DView::RenderKeymap(const ImVec2 &pos)
 {
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-		g_global->m_cDateStr, g_global->m_cFloorStr);
+		g_global->m_dateName, g_global->m_floorName);
 	if (!floor)
 		return;
 
@@ -435,7 +437,7 @@ void c3DView::RenderKeymap(const ImVec2 &pos)
 				const Vector2 offset(keymapPos.x - 5, keymapPos.y - 5); // dummy offset
 
 				cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-					g_global->m_cDateStr, g_global->m_cFloorStr);
+					g_global->m_dateName, g_global->m_floorName);
 				if (floor)
 				{
 					for (auto &pin : floor->pins)
@@ -481,7 +483,7 @@ void c3DView::RenderKeymap(const ImVec2 &pos)
 void c3DView::RenderPopupmenu()
 {
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-		g_global->m_cDateStr, g_global->m_cFloorStr);
+		g_global->m_dateName, g_global->m_floorName);
 	if (!floor || m_pointCloudPos.IsEmpty())
 	{
 		m_isShowPopupMenu = false;
@@ -501,7 +503,7 @@ void c3DView::RenderPopupmenu()
 		if (ImGui::MenuItem("Memo"))
 		{
 			cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
-				floor, g_global->m_cPinStr);
+				floor, g_global->m_pinName);
 			if (pc)
 			{
 				pc->type = cPointCloudDB::sPCData::MEMO;
@@ -525,7 +527,7 @@ void c3DView::RenderPopupmenu()
 				{
 					// add markup
 					cPointCloudDB::sPCData *pc = g_global->m_pcDb.CreateData(
-						floor, g_global->m_cPinStr);
+						floor, g_global->m_pinName);
 					if (pc)
 					{
 						pc->type = cPointCloudDB::sPCData::MARKUP;
@@ -553,7 +555,7 @@ void c3DView::RenderPcMemo()
 
 	// Render Point Cloud Information Window
 	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
-		g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
+		g_global->m_dateName, g_global->m_floorName, g_global->m_pinName);
 	if (!pin)
 		return;
 
@@ -670,7 +672,7 @@ void c3DView::RenderPcMemo()
 
 	// remove point
 	if (cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-		g_global->m_cDateStr, g_global->m_cFloorStr))
+		g_global->m_dateName, g_global->m_floorName))
 	{
 		for (auto &id : rmPcs)
 			g_global->m_pcDb.RemoveData(floor, id);
@@ -719,7 +721,7 @@ void c3DView::RenderMarkup(graphic::cRenderer &renderer)
 {
 	// Render Point Cloud Information Window
 	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(
-		g_global->m_cDateStr, g_global->m_cFloorStr, g_global->m_cPinStr);
+		g_global->m_dateName, g_global->m_floorName, g_global->m_pinName);
 	if (!pin)
 		return;
 
@@ -813,17 +815,17 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 
 bool c3DView::JumpPin(const string &pinName)
 {
-	g_global->m_cPinStr = pinName;
+	g_global->m_pinName = pinName;
 
 	// update window title name
 	common::Str128 title;
 	title.Format("[%s]-[%s]-[%s]-[%s]"
 		, g_global->m_pcDb.m_project.name.c_str()
-		, g_global->m_cDateStr.c_str(), g_global->m_cFloorStr.c_str(), pinName.c_str());
+		, g_global->m_dateName.c_str(), g_global->m_floorName.c_str(), pinName.c_str());
 	g_application->m_title = title.utf8();
 
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
-		g_global->m_cDateStr, g_global->m_cFloorStr);
+		g_global->m_dateName, g_global->m_floorName);
 	if (!floor)
 		return false;
 	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(floor, pinName);
@@ -878,8 +880,8 @@ bool c3DView::MakeShareFile()
 
 	// 현재 보고있는 장면만 복사한다.
 	cPointCloudDB::sProject shareProj;
-	if (!g_global->m_pcDb.MakeShareFile(g_global->m_cDateStr, g_global->m_cFloorStr
-		, g_global->m_cPinStr, shareProj))
+	if (!g_global->m_pcDb.MakeShareFile(g_global->m_dateName, g_global->m_floorName
+		, g_global->m_pinName, shareProj))
 	{
 		::MessageBoxA(m_owner->getSystemHandle(), "Error ShareFile2", "ERROR", MB_OK | MB_ICONERROR);
 		return false;
@@ -924,7 +926,7 @@ bool c3DView::MakeShareFile()
 			}
 
 			// make share/current date/date folder
-			dstFileName += "\\" + g_global->m_cDateStr;
+			dstFileName += "\\" + g_global->m_dateName;
 			StrPath checkDir3(dstFileName);
 			if (!checkDir3.IsFileExist())
 			{
@@ -937,7 +939,7 @@ bool c3DView::MakeShareFile()
 			}
 
 			// make share/current date/date/floor folder
-			dstFileName += "\\" + g_global->m_cFloorStr;
+			dstFileName += "\\" + g_global->m_floorName;
 			StrPath checkDir4(dstFileName);
 			if (!checkDir4.IsFileExist())
 			{
@@ -1161,7 +1163,10 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 				measure.epos = pos;
 				measure.rpos = pcPos;
 				measure.uv = uv;
-				g_global->m_measures.push_back(measure);
+
+				vector<sMeasurePt> *measurePts = g_global->GetCurrentMeasurePts();
+				if (measurePts)
+					measurePts->push_back(measure);
 			}
 		}
 	}

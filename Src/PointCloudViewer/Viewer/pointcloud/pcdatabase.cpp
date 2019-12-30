@@ -8,7 +8,6 @@
 using boost::property_tree::ptree;
 
 
-
 cPointCloudDB::cPointCloudDB()
 {
 }
@@ -26,6 +25,8 @@ cPointCloudDB::~cPointCloudDB()
 
 // read project file
 // read point cloud information
+//
+// json format sample
 //
 // {
 //	   "project" :
@@ -109,7 +110,6 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 
 							StrPath keymapFileName = vt0.second.get<string>(
 								"keymap filename", "filename.jpg");
-							//floor->keymapFileName = keymapFileName.ansi();
 							StrPath keymapFileNameFullPath = dir.ansi() + keymapFileName.ansi();
 							floor->keymapFileName = keymapFileNameFullPath.GetFullFileName();
 
@@ -693,22 +693,6 @@ bool cPointCloudDB::RemoveProjectData(sProject &proj)
 	proj = {};
 	return true;
 }
-
-
-//bool cPointCloudDB::RemoveDate(sFloor *floor)
-//{
-//	// remove all point cloud
-//	for (auto &pin : floor->pins)
-//	{
-//		for (auto &pc : pin->pcds)
-//			delete pc;
-//		pin->pcds.clear();
-//		delete pin;
-//	}
-//	floor->pins.clear();
-//	delete floor;
-//	return true;
-//}
 
 
 void cPointCloudDB::Clear()

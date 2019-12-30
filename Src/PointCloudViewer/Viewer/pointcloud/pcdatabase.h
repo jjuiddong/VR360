@@ -27,11 +27,11 @@
 #pragma once
 
 
-// Point Cloude DataBase
+// Point Cloude Database
 class cPointCloudDB
 {
 public:
-	struct sPCData // point data
+	struct sPCData // point cloud data
 	{
 		enum TYPE {MEMO, MARKUP};
 		TYPE type;
@@ -51,9 +51,9 @@ public:
 		StrPath pc3dFileName; // point cloud 3d data file name
 		StrPath pcTextureFileName; // point cloud texture file name
 		Vector3 pos;
-		Vector2 keymapPos;
+		Vector2 keymapPos; // uv coord
 		float tessScale; // point cloud tessellation scale
-		graphic::Quaternion rot; // point cloud rotation
+		graphic::Quaternion rot; // point cloud rotation (not used)
 		vector<sPCData*> pcds; // point cloud data
 	};
 
@@ -112,7 +112,6 @@ public:
 
 	static bool CopyProjectData(const sProject &src, sProject &dst);
 	static bool RemoveProjectData(sProject &proj);
-	//static bool RemoveDate(sDate *date);
 
 	bool IsLoad();
 	void Clear();
