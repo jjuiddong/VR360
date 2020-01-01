@@ -9,11 +9,8 @@ using namespace framework;
 
 c3DView::c3DView(const string &name)
 	: framework::cDockWindow(name)
-	//, m_groundPlane1(Vector3(0, 1, 0), 0)
-	//, m_groundPlane2(Vector3(0, -1, 0), 0)
 	, m_isShowWireframe(false)
-	, m_isShowTexture(true)
-	, m_isShowGridLine(false)
+	, m_isShowEquirectangular(true)
 	, m_isShowPointCloud(false)
 	, m_isShowPointCloudMesh(false)
 	, m_isShowPcMap(false)
@@ -58,13 +55,6 @@ bool c3DView::Init(cRenderer &renderer)
 	vp.m_vp.Height = viewRect.Height();
 	m_renderTarget.Create(renderer, vp, DXGI_FORMAT_R8G8B8A8_UNORM, true, true
 		, DXGI_FORMAT_D24_UNORM_S8_UINT);
-
-	m_gridLine.Create(renderer, 600, 600, 1.f, 1.f
-		, (eVertexType::POSITION | eVertexType::COLOR)
-		, cColor(0.4f, 0.4f, 0.4f, 1.f)
-		, cColor(0.6f, 0.6f, 0.6f, 1.f)
-	);
-	m_gridLine.m_transform.pos.y = 0.01f;
 
 	m_sphere.Create(renderer, m_sphereRadius, 100, 100
 		, graphic::eVertexType::POSITION 
@@ -162,10 +152,7 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			renderer.GetDevContext()->RSSetState(state.CullCounterClockwise());
 		}
 
-		if (m_isShowGridLine)
-			m_gridLine.Render(renderer);
-
-		if (m_isShowTexture 
+		if (m_isShowEquirectangular
 			&& m_sphere.m_texture
 			&& (string(m_sphere.m_texture->m_fileName.GetFileName()) != "white.dds")
 			)
@@ -175,18 +162,25 @@ void c3DView::OnPreRender(const float deltaSeconds)
 
 		if (m_isShowPointCloud)
 		{
-			Transform tfm;
-
 			if (m_isShowPointCloudMesh)
 			{
 				m_pointCloud.SetShader(nullptr);
-				m_pointCloud.Render(renderer, tfm.GetMatrixXM());
+				m_pointCloud.SetTechnique("Unlit");
+				m_pointCloud.Render(renderer);
+
+				renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
+				m_pointCloud.SetShader(&m_pointShader);
+				m_pointCloud.SetTechnique("Unlit_White");
+				renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
+				m_pointCloud.RenderTessellation(renderer, 1);
+				renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 			}
 			else
 			{
 				m_pointCloud.SetShader(&m_pointShader);
+				m_pointCloud.SetTechnique("Unlit");
 				renderer.m_cbTessellation.m_v->size = Vector2(1, 1) * tessScale;
-				m_pointCloud.RenderTessellation(renderer, 1, tfm.GetMatrixXM());
+				m_pointCloud.RenderTessellation(renderer, 1);
 			}
 		}
 		
@@ -252,7 +246,10 @@ void c3DView::OnPreRender(const float deltaSeconds)
 			renderer.m_dbgLine.Render(renderer);
 		}
 
-		if (m_isShowMeasure && (eEditState::Zoom != g_global->m_state))
+		if (!m_isShowEquirectangular
+			&& m_isShowMeasure
+			&& (eEditState::Zoom != g_global->m_state)
+			)
 			RenderMeasure(renderer);
 		
 		if (0) // uv zoom image
@@ -305,6 +302,9 @@ void c3DView::RenderMeasure(graphic::cRenderer &renderer)
 	if (!measurePts)
 		return;
 
+	CommonStates state(renderer.GetDevice());
+	renderer.GetDevContext()->OMSetDepthStencilState(state.DepthNone(), 0);
+
 	float totLen = 0.f;
 	for (uint i = 1; i < measurePts->size(); i+=2)
 	{
@@ -312,7 +312,8 @@ void c3DView::RenderMeasure(graphic::cRenderer &renderer)
 		const sMeasurePt &p1 = measurePts->at(i);
 
 		renderer.m_dbgLine.SetColor(cColor::RED);
-		renderer.m_dbgLine.SetLine(p0.epos, p1.epos, 0.01f);
+		//renderer.m_dbgLine.SetLine(p0.epos, p1.epos, 0.01f);
+		renderer.m_dbgLine.SetLine(p0.rpos, p1.rpos, 1.f);
 		renderer.m_dbgLine.Render(renderer);
 
 		const float len = p0.rpos.Distance(p1.rpos);
@@ -329,12 +330,14 @@ void c3DView::RenderMeasure(graphic::cRenderer &renderer)
 			, tfm, true
 		);
 	}
+
+	renderer.GetDevContext()->OMSetDepthStencilState(state.DepthDefault(), 0);
 }
 
 
 void c3DView::OnRender(const float deltaSeconds)
 {
-	ImVec2 pos = ImGui::GetCursorScreenPos();
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
 	m_viewPos = { (int)(pos.x), (int)(pos.y) };
 	const common::sRectf viewRect = GetWindowSizeAvailible();
 	ImGui::Image(m_renderTarget.m_resolvedSRV, ImVec2(viewRect.Width(), viewRect.Height()));
@@ -352,26 +355,31 @@ void c3DView::OnRender(const float deltaSeconds)
 	ImGui::SetNextWindowSize(ImVec2(min(viewRect.Width(), MENU_WIDTH), 100.f));
 	if (ImGui::Begin("Information", &isOpen, flags))
 	{
-		//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		if (ImGui::Checkbox("Equirectangular", &m_isShowTexture))
-			m_isShowPointCloud = !m_isShowTexture;
+		if (ImGui::Checkbox("Equirectangular", &m_isShowEquirectangular))
+		{
+			m_isShowPointCloud = !m_isShowEquirectangular;
 
-		//ImGui::SameLine();
-		//ImGui::Checkbox("Wireframe", &m_isShowWireframe);
-		//ImGui::SameLine();
-		//ImGui::Checkbox("GridLine", &m_isShowGridLine);
+			// equirectangular view에서는 측정기능을 끈다.
+			if (m_isShowEquirectangular && (eEditState::Measure == g_global->m_state))
+				g_global->m_state = eEditState::VR360;
+		}
+
 		ImGui::SameLine();
 		if (ImGui::Checkbox("3D      ", &m_isShowPointCloud))
-			m_isShowTexture = !m_isShowPointCloud;
+		{
+			m_isShowEquirectangular = !m_isShowPointCloud;
+
+			// equirectangular view에서는 측정기능을 끈다.
+			if (m_isShowEquirectangular && (eEditState::Measure == g_global->m_state))
+				g_global->m_state = eEditState::VR360;
+		}
+
 		if (m_isShowPointCloud)
 		{
 			ImGui::SameLine();
 			ImGui::Checkbox("Mesh", &m_isShowPointCloudMesh);
 		}
-		
-		//ImGui::SameLine();
-		//ImGui::Checkbox("PCMap", &m_isShowPcMap);
-		//ImGui::Text("uv = %f, %f", m_uv.x, m_uv.y);
+	
 	}
 	ImGui::End();
 	ImGui::PopStyleColor();
@@ -761,54 +769,33 @@ Vector3 c3DView::PickPointCloud(const POINT mousePt)
 	const Line line(ray.dir, ray.orig, 10000.f);
 	const Plane plane(ray.dir, ray.orig);
 	
-	//sRawMeshGroup2 *rawMeshes = cResourceManager::Get()->LoadRawMesh(
-	//	m_pointCloud.m_fileName.c_str());
-	//RETV(!rawMeshes, Vector3::Zeroes);
+	sRawMeshGroup2 *rawMeshes = cResourceManager::Get()->LoadRawMesh(
+		m_pointCloud.m_fileName.c_str());
+	RETV(!rawMeshes, Vector3::Zeroes);
 
-	//Transform tfm;
-	//tfm.scale = Vector3(-1, -1, 1);
-	//Matrix44 tm = tfm.GetMatrix();
-
-	//Vector3 nearPos;
-	//float minLen = FLT_MAX;
-	//for (auto &meshes : rawMeshes->meshes)
-	//{
-	//	for (auto &vtx : meshes.vertices)
-	//	{
-	//		const Vector3 pos = vtx * tm;
-	//		if (plane.Distance(pos) < 0.f)
-	//			continue;
-
-	//		const float dist = line.GetDistance(pos);
-	//		if (minLen > dist)
-	//		{
-	//			minLen = dist;
-	//			nearPos = pos;
-	//		}
-	//	}
-	//}
-	//return nearPos;
-
-	cPointCloudMap *pcMap = g_global->m_pcMap;
-	if (!pcMap)
-		return {};
+	Transform tfm; // no transform now
+	Matrix44 tm = tfm.GetMatrix();
 
 	Vector3 nearPos;
 	float minLen = FLT_MAX;
-	for (uint i=0; i < pcMap->m_pcCount; ++i)
+	for (auto &meshes : rawMeshes->meshes)
 	{
-		const auto &pos = pcMap->m_pcd[i];
-		if (plane.Distance(pos) < 0.f)
-			continue;
-
-		const float dist = line.GetDistance(pos);
-		if (minLen > dist)
+		for (auto &vtx : meshes.vertices)
 		{
-			minLen = dist;
-			nearPos = pos;
+			const Vector3 pos = vtx * tm;
+
+			// 카메라 방향의 반대쪽 버텍스는 제외
+			if (plane.Distance(pos) < 0.f)
+				continue;
+
+			const float dist = line.GetDistance(pos);
+			if (minLen > dist)
+			{
+				minLen = dist;
+				nearPos = pos;
+			}
 		}
 	}
-
 	return nearPos;
 }
 
@@ -827,10 +814,18 @@ bool c3DView::JumpPin(const string &pinName)
 	cPointCloudDB::sFloor *floor = g_global->m_pcDb.FindFloor(
 		g_global->m_dateName, g_global->m_floorName);
 	if (!floor)
+	{
+		m_sphere.m_texture = nullptr;
+		m_pointCloud.Clear();
 		return false;
+	}
 	cPointCloudDB::sPin *pin = g_global->m_pcDb.FindPin(floor, pinName);
 	if (!pin)
+	{
+		m_sphere.m_texture = nullptr;
+		m_pointCloud.Clear();
 		return false;
+	}
 
 	// load equirectangular file
 	m_sphere.m_texture = graphic::cResourceManager::Get()->LoadTexture(GetRenderer()
@@ -965,16 +960,20 @@ bool c3DView::MakeShareFile()
 				floor->keymapFileName = keymapFileName;
 			}
 
+			// copy point cloud data file
 			for (auto &pin : floor->pins)
 			{
 				const StrPath pcdFileName = dstFileName + "\\" + pin->pc3dFileName.GetFileName();
 				const StrPath textureFileName = dstFileName + "\\" + pin->pcTextureFileName.GetFileName();
 				const StrPath srcPcmapFileName = pin->pc3dFileName.GetFileNameExceptExt2() + ".pcmap";
 				const StrPath pcmapFileName = pcdFileName.GetFileNameExceptExt2() + ".pcmap";
+				const StrPath srcMtlFileName = pin->pcTextureFileName.GetFilePathExceptFileName()
+					+ "\\" + GetMtlFileName(pin->pc3dFileName).GetFileName();
+				const StrPath mtlFileName = dstFileName + "\\" + srcMtlFileName.GetFileName();
 
 				if (pin->pc3dFileName.IsFileExist())
 				{
-					// copy to share folder
+					// obj file copy to share folder
 					if (!::CopyFileA(pin->pc3dFileName.c_str(), pcdFileName.c_str(), FALSE))
 					{
 						::MessageBoxA(m_owner->getSystemHandle()
@@ -987,7 +986,7 @@ bool c3DView::MakeShareFile()
 
 				if (pin->pcTextureFileName.IsFileExist())
 				{
-					// copy to share folder
+					// texture file copy to share folder
 					if (!::CopyFileA(pin->pcTextureFileName.c_str(), textureFileName.c_str(), FALSE))
 					{
 						::MessageBoxA(m_owner->getSystemHandle()
@@ -1000,7 +999,7 @@ bool c3DView::MakeShareFile()
 
 				if (srcPcmapFileName.IsFileExist())
 				{
-					// copy to share folder
+					// pcmap file copy to share folder
 					if (!::CopyFileA(srcPcmapFileName.c_str(), pcmapFileName.c_str(), FALSE))
 					{
 						::MessageBoxA(m_owner->getSystemHandle()
@@ -1008,6 +1007,19 @@ bool c3DView::MakeShareFile()
 						return false;
 					}
 				}
+
+				// *.mtl file copy to share folder
+				if (srcMtlFileName.IsFileExist())
+				{
+					// pcmap file copy to share folder
+					if (!::CopyFileA(srcMtlFileName.c_str(), mtlFileName.c_str(), FALSE))
+					{
+						::MessageBoxA(m_owner->getSystemHandle()
+							, "Error ShareFile11", "ERROR", MB_OK | MB_ICONERROR);
+						return false;
+					}
+				}
+
 			}//~pins
 		}//~floors
 	}//~dates
@@ -1036,6 +1048,36 @@ bool c3DView::MakeShareFile()
 	}
 
 	return true;
+}
+
+
+// get mtl filename from obj file
+StrPath c3DView::GetMtlFileName(const StrPath &objFileName)
+{
+	std::ifstream ifs(objFileName.c_str());
+	if (!ifs.is_open())
+		return "";
+
+	int cnt = 0;
+	string line;
+	while (getline(ifs, line) && (cnt++ < 100))
+	{
+		if (string::npos != line.find("mtllib"))
+		{
+			vector<string> toks;
+			common::tokenizer(line, " ", "", toks);
+			if (toks.size() >= 2)
+			{
+				return toks[1];
+			}
+			else
+			{
+				break; // error occurred
+			}
+		}
+	}
+
+	return "";
 }
 
 
@@ -1074,14 +1116,6 @@ void c3DView::OnMouseMove(const POINT mousePt)
 
 	if (m_mouseDown[0])
 	{
-		Vector3 dir = GetMainCamera().GetDirection();
-		Vector3 right = GetMainCamera().GetRight();
-		dir.y = 0;
-		dir.Normalize();
-		right.y = 0;
-		right.Normalize();
-		//GetMainCamera().MoveRight(-delta.x * m_rotateLen * 0.001f);
-		//GetMainCamera().MoveFrontHorizontal(delta.y * m_rotateLen * 0.001f);
 	}
 	else if (m_mouseDown[1])
 	{
@@ -1146,6 +1180,11 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 
 		if (!m_isBeginPopupMenu)
 		{
+			// 체크박스 근처에서 클릭할 때, 무시
+			const sRectf rect = sRectf::Rect(0, 0, 400, 50);
+			if (rect.IsIn((float)mousePt.x, (float)mousePt.y))
+				break;
+
 			const Ray ray = GetMainCamera().GetRay(mousePt.x, mousePt.y);
 			const Vector2 uv = m_sphere.GetDirectionUV(ray);
 			m_pointUV = uv;
@@ -1153,12 +1192,27 @@ void c3DView::OnMouseUp(const sf::Mouse::Button &button, const POINT mousePt)
 			const Vector3 pos = ray.dir * m_pickPosDistance + ray.orig;
 			m_pickPos = pos;
 
-			if ((eEditState::Measure == g_global->m_state)
-				&& g_global->m_pcMap)
+			// pcmap picking
+			//if ((eEditState::Measure == g_global->m_state)
+			//	&& g_global->m_pcMap)
+			//{
+			//	// uv 위치의 point cloud position을 얻는다.
+			//	const Vector3 pcPos = g_global->m_pcMap->GetPosition(uv);
+			//	
+			//	sMeasurePt measure;
+			//	measure.epos = pos;
+			//	measure.rpos = pcPos;
+			//	measure.uv = uv;
+
+			//	vector<sMeasurePt> *measurePts = g_global->GetCurrentMeasurePts();
+			//	if (measurePts)
+			//		measurePts->push_back(measure);
+			//}
+
+			if (eEditState::Measure == g_global->m_state)
 			{
-				// uv 위치의 point cloud position을 얻는다.
-				const Vector3 pcPos = g_global->m_pcMap->GetPosition(uv);
-				
+				const Vector3 pcPos = PickPointCloud(mousePt);
+
 				sMeasurePt measure;
 				measure.epos = pos;
 				measure.rpos = pcPos;

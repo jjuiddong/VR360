@@ -371,6 +371,7 @@ bool cHierarchyView::RenderNewProjectDlg()
 					}
 
 					UpdateDirectoryHierarchy(g_global->m_pcDb.m_project.dir);
+					g_global->m_3dView->JumpPin(g_global->m_pinName);
 				}
 				else
 				{

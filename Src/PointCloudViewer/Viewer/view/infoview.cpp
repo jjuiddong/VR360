@@ -212,12 +212,13 @@ void cInfoView::RenderMarkupList()
 
 void cInfoView::RenderMeasure()
 {
+	// equi rectangular로 출력할 때는 측정기능을 끈다.
+	const bool isEquirectangular = g_global->m_3dView->m_isShowEquirectangular;
+
 	ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Once);
 	if (ImGui::CollapsingHeader("Measure"))
 	{
 		// measure button
-		ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-
 		// 'Measure' toggle style button
 		if (g_global->m_state == eEditState::Measure)
 		{
@@ -232,13 +233,12 @@ void cInfoView::RenderMeasure()
 
 		if (ImGui::ImageButton(m_measureTex->m_texSRV, m_measureBtnSize))
 		{
-			if (g_global->m_state == eEditState::Measure)
+			if (!isEquirectangular)
 			{
-				g_global->m_state = eEditState::VR360;
-			}
-			else
-			{
-				g_global->m_state = eEditState::Measure;
+				if (g_global->m_state == eEditState::Measure)
+					g_global->m_state = eEditState::VR360;
+				else
+					g_global->m_state = eEditState::Measure;
 			}
 		}
 		ImGui::PopStyleColor(1);
@@ -252,10 +252,17 @@ void cInfoView::RenderMeasure()
 		//~button
 
 		ImGui::SameLine();
-		if (g_global->m_state == eEditState::Measure)
-			ImGui::Text("Measure Mode");
+		if (isEquirectangular)
+		{
+			ImGui::Text("Disable");
+		}
 		else
-			ImGui::Text("None");			
+		{
+			if (g_global->m_state == eEditState::Measure)
+				ImGui::Text("Measure Mode");
+			else
+				ImGui::Text("Enable");			
+		}
 
 		ImGui::TextUnformatted("Show Measure");
 		ImGui::SameLine();

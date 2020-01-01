@@ -83,7 +83,10 @@ bool cPointCloudDB::Read(const StrPath &fileName)
 		{
 			StrId name = itor0->second.get<string>("name", "project name");
 			m_project.name = name.ansi();
-			StrPath dir = itor0->second.get<string>("path", "c:\\project\\");
+			//StrPath dir = itor0->second.get<string>("path", "c:\\project\\");
+
+			// project 파일 경로를 project path로 설정한다.
+			StrPath dir = fileName.GetFilePathExceptFileName().utf8();
 			m_project.dir = dir.ansi();
 
 			ptree::assoc_iterator itor1 = itor0->second.find("dates");

@@ -164,11 +164,11 @@ void cViewer::OnRender(const float deltaSeconds)
 
 // registry read/write
 // key : CurrentUser//Software//VR360//abc
-// 사용기간이 30일 지나면 프로그램이 실행안되게하는 코드 추가
+// 사용기간이 365일 지나면 프로그램이 실행안되게하는 코드 추가
 //
 // 1. registry key가 없으면 추가하고, 그날 날짜를 저장한다.
 //		format: 0xFF020191203 -> 20191203 ascii hexa 코드로 저장
-// 2. 프로그램이 실행될 때마다 registry key 의 날짜를 검사해서 30일이 
+// 2. 프로그램이 실행될 때마다 registry key 의 날짜를 검사해서 365일이 
 //	  지나면 0xFF1~ 형태로 저장한다.
 // 3. 이후 0xFF1로 값이 저장 되어있으면 프로그램 종료.
 // 4. 0xFF0~ 형태이더라도 30일이 경과하면 프로그램 종료.
@@ -176,7 +176,7 @@ void cViewer::OnRender(const float deltaSeconds)
 //    프로그램이 실행 안됨
 bool cViewer::ReadRegistry()
 {
-	const int DURATION = 90;
+	const int DURATION = 365;
 	bool reval = true;
 
 	// open VR360 Regstry Key

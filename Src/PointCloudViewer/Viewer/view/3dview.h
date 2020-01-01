@@ -19,6 +19,7 @@ public:
 	virtual void OnResizeEnd(const framework::eDockResize::Enum type, const common::sRectf &rect) override;
 	virtual void OnEventProc(const sf::Event &evt) override;
 	virtual void OnResetDevice() override;
+	bool JumpPin(const string &pinName);
 
 
 protected:
@@ -29,8 +30,8 @@ protected:
 	void RenderMarkup(graphic::cRenderer &renderer);
 	void RenderMeasure(graphic::cRenderer &renderer);
 	Vector3 PickPointCloud(const POINT mousePt);
-	bool JumpPin(const string &pinName);
 	bool MakeShareFile();
+	StrPath GetMtlFileName(const StrPath &objFileName);
 	
 	void UpdateLookAt(const POINT &mousePt);
 	void OnWheelMove(const float delta, const POINT mousePt);
@@ -43,7 +44,6 @@ public:
 	graphic::cSphere2 m_sphere;
 	graphic::cModel m_pointCloud;
 	graphic::cModel m_pcMapModel;
-	graphic::cGridLine m_gridLine;
 	graphic::cCube m_cube;
 	graphic::cQuad2D m_quad1;
 	graphic::cQuad2D m_quad2;
@@ -71,9 +71,8 @@ public:
 	float m_pickPosDistance;
 	float m_markupScale;
 	bool m_isShowWireframe;
-	bool m_isShowTexture;
-	bool m_isShowGridLine;
-	bool m_isShowPointCloud; // point cloud
+	bool m_isShowEquirectangular;
+	bool m_isShowPointCloud; // point cloud (obj file render)
 	bool m_isShowPointCloudMesh; // point cloud, render mesh
 	bool m_isShowPcMap; // tessellation
 	bool m_isShowPopupMenu;
